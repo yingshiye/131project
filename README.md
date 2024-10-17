@@ -7,3 +7,5 @@ Have a hard time to get to one node from another node, and decided to go to offi
 Figured out how to go through to the main function node, and got the imformation from it
 Started a new function call run_function
 a bit confused about the parameter self in python
+
+

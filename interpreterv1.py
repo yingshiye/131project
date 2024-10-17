@@ -1,4 +1,4 @@
-from intbase import InterpreterBase
+from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
 
 class Interpreter(InterpreterBase):
@@ -7,7 +7,12 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
     def run_statement(self, statement_node):
-        
+        if (statement_node.elem_type == 'vardef'): # variable definition
+            pass
+        if (statement_node.elem_type == '='):
+            pass
+        if (statement_node.elem_type == 'fcall'):
+            pass
 
     def run_function(self, func_Code):
         print(func_Code)
@@ -27,6 +32,9 @@ class Interpreter(InterpreterBase):
             if (functions is not None):
                 for func in functions:
                     self.run_function(self, func)
+            else:
+                super().error(ErrorType.NAME_ERROR, "No main() function was found",)
+
                     
             # print(functions)
             # print(type(functions))
