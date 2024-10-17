@@ -6,13 +6,16 @@ class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
+    def run_fcall(self, fcall_Node):
+        pass
+
     def run_statement(self, statement_node):
         if (statement_node.elem_type == 'vardef'): # variable definition
             pass
         if (statement_node.elem_type == '='):
             pass
         if (statement_node.elem_type == 'fcall'):
-            pass
+            self.run_fcall(self, statement_node)
 
     def run_function(self, func_Code):
         print(func_Code)
