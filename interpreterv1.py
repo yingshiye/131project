@@ -6,8 +6,16 @@ class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
+    def run_statement(self, statement_node):
+        
+
     def run_function(self, func_Code):
         print(func_Code)
+        statements_Node = func_Code.dict.get('statements', [])
+        for statements in statements_Node: 
+            print(statements.elem_type)
+            self.run_statement(self, statements)
+            
 
     def run(self, program):
         parsed_program = parse_program(program)
@@ -38,7 +46,7 @@ class Interpreter(InterpreterBase):
 
 
     
-    # def run_statment(self, statement_node):
+
 
     # Note: parsed_program is Element, that has 
     # <Element>.elem_type -> if value is program, it means this node is program node 
