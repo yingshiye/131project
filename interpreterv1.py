@@ -8,12 +8,16 @@ class Interpreter(InterpreterBase):
 
     def run(self, program):
         parsed_program = parse_program(program)
-        function_code = parsed_program.elem_type
-        print(function_code)
-        b = parsed_program.dict
-        print(b)
-        c = parsed_program.get()
-        print(c)
+        program_node = parsed_program.elem_type
+        if (program_node == 'program'):
+            # parsed_program.dict['functions'] is not None
+            # print(program_node['functions'])
+            functions = parsed_program.dict.get('functions', [])
+            print(functions)
+
+        
+        # c = parsed_program.get()
+        # print(c)
         # function_code = get_main_function_code(parsed_program)
         # print(parsed_program)
         # print(Element.get( 'functions'))
