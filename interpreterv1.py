@@ -6,6 +6,9 @@ class Interpreter(InterpreterBase):
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
+    def run_function(self, func_Code):
+        print(func_Code)
+
     def run(self, program):
         parsed_program = parse_program(program)
         program_node = parsed_program.elem_type
@@ -13,7 +16,14 @@ class Interpreter(InterpreterBase):
             # parsed_program.dict['functions'] is not None
             # print(program_node['functions'])
             functions = parsed_program.dict.get('functions', [])
-            print(functions)
+            if (functions is not None):
+                for func in functions:
+                    self.run_function(self, func)
+                    
+            # print(functions)
+            # print(type(functions))
+            # print(functions[0].elem_type)
+
 
         
         # c = parsed_program.get()
@@ -26,7 +36,7 @@ class Interpreter(InterpreterBase):
 		# main_func_node = get_main_func_node(ast)
 		# run_func(main_func_node)
 
-    # def run_function(self, func_Code):
+
     
     # def run_statment(self, statement_node):
 
