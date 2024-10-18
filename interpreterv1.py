@@ -38,7 +38,6 @@ class Interpreter(InterpreterBase):
                 if (var[0] == expression_variable): # find variable
                     if (var[1] is not None):
                         return var[1]
-
                     # else variable empty error
             super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
 
@@ -57,6 +56,11 @@ class Interpreter(InterpreterBase):
 
     def run_statement(self, statement_node):
         if (statement_node.elem_type == 'vardef'): # variable definition
+            varName = statement_node.dict.get('name')
+            for var in self.variables: 
+                if (var[0] == varName):
+                    # print("double defined")
+                    super().error(ErrorType.NAME_ERROR, f"Variable {varName} defined more than once")
             self.variables.append((statement_node.dict.get('name'), None))
             # print(self.variables)
         if (statement_node.elem_type == '='):
@@ -134,7 +138,7 @@ class Interpreter(InterpreterBase):
 
 program_source = """func main() {
     var x;
-    var y;
+    var x;
     y = 5;
     x = 5 - "string";
 }
