@@ -9,7 +9,20 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
     def evaluate_expression(self, expression):
-        pass
+        if (expression.elem_type('+')): #expression operator node
+            pass #temp
+        elif (expression.elem_type('-')):
+            pass
+
+        elif (expression.elem_type('var')): # variable node
+            return self.elaluate_expression(self, expression.dict.get('name'))
+
+        elif (expression.elem_type('string')): #value node
+            return expression.dict.get('val', [])
+        
+        elif (expression.elem_type('int')): #value node
+            return expression.dict.get('val', [])
+        
 
     def run_fcall(self, fcall_Node): #print() and inputi()
         if (fcall_Node.elem_type == "print"):
@@ -26,8 +39,8 @@ class Interpreter(InterpreterBase):
             for var in self.variables: 
                 if (var[0] == statement_node.dict.get('name', [])): # find variable
                     expression = statement_node.dict.get('expression', []) #get the expression arguement for the variables 
-                    for express in expression:
-                        self.evaluate_expression(self, express)
+                    # print(expression)
+                    result = self.evaluate_expression(self, expression)
                 # else , which is the variable not exist
         if (statement_node.elem_type == 'fcall'):
             self.run_fcall(self, statement_node)
@@ -88,7 +101,7 @@ class Interpreter(InterpreterBase):
 
 program_source = """func main() {
     var x;
-    x = 5;
+    x = 5 + 6 + 7;
     print("The sum is: ", x);
 }
 """
