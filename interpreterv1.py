@@ -51,8 +51,12 @@ class Interpreter(InterpreterBase):
     def run_fcall(self, fcall_Node): #print() and inputi()
         if (fcall_Node.elem_type == "print"):
             pass
-        if (fcall_Node.elem_type == "inputi"):
+        elif (fcall_Node.elem_type == "inputi"):
             pass
+        else: 
+            super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
+
+
 
     def run_statement(self, statement_node):
         if (statement_node.elem_type == 'vardef'): # variable definition
@@ -138,9 +142,6 @@ class Interpreter(InterpreterBase):
 
 program_source = """func main() {
     var x;
-    var x;
-    y = 5;
-    x = 5 - "string";
 }
 """
 
