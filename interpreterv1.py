@@ -75,12 +75,11 @@ class Interpreter(InterpreterBase):
             # print(program_node['functions'])
             functions = parsed_program.dict.get('functions', [])
             if (functions is not None):
-                if (functions.dict.get('name', []) != 'main'):
-                    super().error(ErrorType.NAME_ERROR, "No main() function was found",)
-                self.run_function(self, functions)
+                for func in functions:
+                    if (func.dict.get('name') != 'main'):
+                        super().error(ErrorType.NAME_ERROR, "No main()",)
+                    self.run_function(self, func)
 
-
-                    
             # print(functions)
             # print(type(functions))
             # print(functions[0].elem_type)
