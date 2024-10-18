@@ -9,20 +9,20 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
     def evaluate_expression(self, expression):
-        if (expression.elem_type('+')): #expression operator node
+        if (expression.elem_type == '+'): #expression operator node
             # pass #temp
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
             expression_result = operator1 + operator2
             return expression_result
 
-        elif (expression.elem_type('-')):
+        elif (expression.elem_type == '-'):
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
             expression_result = operator1 - operator2
             return expression_result
         
-        elif (expression.elem_type('var')): # variable node
+        elif (expression.elem_type == 'var'): # variable node
             # return self.elaluate_expression(self, expression.dict.get('name'))
             for var in self.variables: 
                 if (var[0] == expression.dict.get('name', [])): # find variable
@@ -31,10 +31,10 @@ class Interpreter(InterpreterBase):
                     # else variable empty error
             # pass
 
-        elif (expression.elem_type('string')): #value node
+        elif (expression.elem_type == 'string'): #value node
             return expression.dict.get('val', [])
         
-        elif (expression.elem_type('int')): #value node
+        elif (expression.elem_type == 'int'): #value node
             return expression.dict.get('val', [])
         
 
