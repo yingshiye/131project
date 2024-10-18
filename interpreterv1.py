@@ -51,12 +51,13 @@ class Interpreter(InterpreterBase):
         if (statement_node.elem_type == '='):
             # print(statement_node.dict.get('name', []))
             for i, var in enumerate(self.variables):
-                if (var[i] == statement_node.dict.get('name', [])): # find variable
+                if (var[0] == statement_node.dict.get('name', [])): # find variable
+                    # print(statement_node.dict.get('name', []))
                     expression = statement_node.dict.get('expression', []) #get the expression arguement for the variables 
                     # print(expression)
                     result = self.evaluate_expression(self, expression)
                     self.variables[i] = (statement_node.dict.get('name', []), result)
-                    print(self.variables)
+                    # print(self.variables)
 
                 # else , which is the variable not exist
         if (statement_node.elem_type == 'fcall'):
@@ -119,8 +120,7 @@ program_source = """func main() {
     var x;
     var y;
     y = 5;
-    x = 5 + 6 - 7;
-
+    x = 5 + y;
 }
 """
 
