@@ -18,7 +18,7 @@ class Interpreter(InterpreterBase):
                 expression_result = operator1 + operator2
                 return expression_result
             else:
-                print("incorrect ")
+                super().error(ErrorType.TYPE_ERROR, "not the same type of variables for operation")
 
         elif (expression.elem_type == '-'):
             operator1 = self.evaluate_expression(expression.dict.get('op1', []))
@@ -29,7 +29,7 @@ class Interpreter(InterpreterBase):
                 expression_result = operator1 - operator2
                 return expression_result
             else:
-                print("incorrect")
+                super().error(ErrorType.TYPE_ERROR, "not the same type of variables for operation")
 
         elif (expression.elem_type == 'var'): # variable node
             # return self.elaluate_expression(self, expression.dict.get('name'))
