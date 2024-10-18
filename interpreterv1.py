@@ -3,33 +3,37 @@ from brewparse import parse_program
 
 class Interpreter(InterpreterBase):
 
-    variables = []
-
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
+        self.variables = []
 
     def evaluate_expression(self, expression):
         if (expression.elem_type == '+'): #expression operator node
             # pass #temp
+            # need to check type
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
-            expression_result = operator1 + operator2
-            return expression_result
+            if (type(operator2) is type(operator2)):
+                expression_result = operator1 + operator2
+                return expression_result
 
         elif (expression.elem_type == '-'):
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
-            expression_result = operator1 - operator2
-            return expression_result
+            if (type(operator2) is type(operator2)):
+                expression_result = operator1 - operator2
+                return expression_result
         
         elif (expression.elem_type == 'var'): # variable node
             # return self.elaluate_expression(self, expression.dict.get('name'))
+            expression_variable = expression.dict.get('name', [])
             for var in self.variables: 
-                if (var[0] == expression.dict.get('name', [])): # find variable
+                if (var[0] == expression_variable): # find variable
                     if (var[1] is not None):
                         return var[1]
+
                     # else variable empty error
-            # pass
+            super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
 
         elif (expression.elem_type == 'string'): #value node
             return expression.dict.get('val', [])
@@ -57,7 +61,10 @@ class Interpreter(InterpreterBase):
                     # print(expression)
                     result = self.evaluate_expression(self, expression)
                     self.variables[i] = (statement_node.dict.get('name', []), result)
+                    return
                     # print(self.variables)
+            super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
+
 
                 # else , which is the variable not exist
         if (statement_node.elem_type == 'fcall'):
@@ -78,11 +85,13 @@ class Interpreter(InterpreterBase):
             # parsed_program.dict['functions'] is not None
             # print(program_node['functions'])
             functions = parsed_program.dict.get('functions', [])
-            if (functions is not None):
+            if functions is not None:
                 for func in functions:
-                    if (func.dict.get('name') != 'main'):
-                        super().error(ErrorType.NAME_ERROR, "No main()",)
-                    self.run_function(self, func)
+                    if (func.dict.get('name') == 'main'):
+                        self.run_function(self, func)
+                        return
+                    super().error(ErrorType.NAME_ERROR, "No main()",)
+
 
             # print(functions)
             # print(type(functions))
@@ -116,15 +125,15 @@ class Interpreter(InterpreterBase):
 
 
 
-program_source = """func main() {
-    var x;
-    var y;
-    y = 5;
-    x = 5 + y;
-}
-"""
+# program_source = """func main() {
+#     var x;
+#     var y;
+#     y = 5;
+#     x = 5 + y;
+# }
+# """
 
-    # print("The sum is: ", x);
+#     # print("The sum is: ", x);
 
-a = Interpreter
-a.run(a, program_source)
+# a = Interpreter
+# a.run(a, program_source)
