@@ -3,21 +3,28 @@ from brewparse import parse_program
 
 class Interpreter(InterpreterBase):
 
+    variables = []
+
     def __init__(self, console_output=True, inp=None, trace_output=False):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
 
-    def run_fcall(self, fcall_Node):
-        pass
+
+    def run_fcall(self, fcall_Node): #print() and inputi()
+        if (fcall_Node.elem_type == "print"):
+            pass
+        if (fcall_Node.elem_type == "inputi"):
+            pass
 
     def run_statement(self, statement_node):
         if (statement_node.elem_type == 'vardef'): # variable definition
-            pass
+            self.variables.append((statement_node.dict.get('name'), None))
+            print(self.variables)
         if (statement_node.elem_type == '='):
-            pass
+            statement_node
         if (statement_node.elem_type == 'fcall'):
             self.run_fcall(self, statement_node)
 
-    def run_function(self, func_Code):
+    def run_function(self, func_Code): 
         print(func_Code)
         statements_Node = func_Code.dict.get('statements', [])
         for statements in statements_Node: 
