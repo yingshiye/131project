@@ -51,7 +51,7 @@ class Interpreter(InterpreterBase):
     def run_fcall(self, fcall_Node): #print() and inputi()
         if (fcall_Node.elem_type == "print"):
             pass
-        elif (fcall_Node.elem_type == "inputi"):
+        elif (fcall_Node.elem_type == "inputi"): # only one parameter
             pass
         else: 
             super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
@@ -140,12 +140,16 @@ class Interpreter(InterpreterBase):
 
 
 
-program_source = """func main() {
-    var x;
-}
-"""
+# program_source = """func main() {
+#     var x;
+#     var y; 
+#     y = 5; 
+#     x = "hello";
+#     x = x + y;
+# }
+# """
 
-    # print("The sum is: ", x);
+#     # print("The sum is: ", x);
 
-a = Interpreter()
-a.run(program_source)
+# a = Interpreter()
+# a.run(program_source)
