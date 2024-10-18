@@ -7,23 +7,30 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)   # call InterpreterBase's constructor
         self.variables = []
 
+
     def evaluate_expression(self, expression):
         if (expression.elem_type == '+'): #expression operator node
             # pass #temp
             # need to check type
-            operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
-            operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
-            if (type(operator2) is type(operator2)):
+            operator1 = self.evaluate_expression(expression.dict.get('op1', []))
+            operator2 = self.evaluate_expression(expression.dict.get('op2', []))
+            if (type(operator1) is type(operator2)):
                 expression_result = operator1 + operator2
                 return expression_result
+            else:
+                print("incorrect ")
 
         elif (expression.elem_type == '-'):
-            operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
-            operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
-            if (type(operator2) is type(operator2)):
+            operator1 = self.evaluate_expression(expression.dict.get('op1', []))
+            operator2 = self.evaluate_expression(expression.dict.get('op2', []))
+            # print(type(operator2))
+            # print(type(operator1))
+            if (type(operator1) is type(operator2)):
                 expression_result = operator1 - operator2
                 return expression_result
-        
+            else:
+                print("incorrect")
+
         elif (expression.elem_type == 'var'): # variable node
             # return self.elaluate_expression(self, expression.dict.get('name'))
             expression_variable = expression.dict.get('name', [])
@@ -54,12 +61,12 @@ class Interpreter(InterpreterBase):
             # print(self.variables)
         if (statement_node.elem_type == '='):
             # print(statement_node.dict.get('name', []))
-            for i, var in enumerate(self.variables):
+            for i, var in enumerate(self.variables): # asked gpt about how to chagne tuple inside of the list while looping it 
                 if (var[0] == statement_node.dict.get('name', [])): # find variable
                     # print(statement_node.dict.get('name', []))
                     expression = statement_node.dict.get('expression', []) #get the expression arguement for the variables 
                     # print(expression)
-                    result = self.evaluate_expression(self, expression)
+                    result = self.evaluate_expression(expression)
                     self.variables[i] = (statement_node.dict.get('name', []), result)
                     return
                     # print(self.variables)
@@ -68,14 +75,14 @@ class Interpreter(InterpreterBase):
 
                 # else , which is the variable not exist
         if (statement_node.elem_type == 'fcall'):
-            self.run_fcall(self, statement_node)
+            self.run_fcall(statement_node)
 
     def run_function(self, func_Code): 
         # print(func_Code)
         statements_Node = func_Code.dict.get('statements', [])
         for statements in statements_Node: 
             # print(statements.elem_type)
-            self.run_statement(self, statements)
+            self.run_statement(statements)
             
 
     def run(self, program):
@@ -88,7 +95,7 @@ class Interpreter(InterpreterBase):
             if functions is not None:
                 for func in functions:
                     if (func.dict.get('name') == 'main'):
-                        self.run_function(self, func)
+                        self.run_function(func)
                         return
                     super().error(ErrorType.NAME_ERROR, "No main()",)
 
@@ -125,15 +132,15 @@ class Interpreter(InterpreterBase):
 
 
 
-# program_source = """func main() {
-#     var x;
-#     var y;
-#     y = 5;
-#     x = 5 + y;
-# }
-# """
+program_source = """func main() {
+    var x;
+    var y;
+    y = 5;
+    x = 5 - "string";
+}
+"""
 
-#     # print("The sum is: ", x);
+    # print("The sum is: ", x);
 
-# a = Interpreter
-# a.run(a, program_source)
+a = Interpreter()
+a.run(program_source)
