@@ -10,12 +10,24 @@ class Interpreter(InterpreterBase):
 
     def evaluate_expression(self, expression):
         if (expression.elem_type('+')): #expression operator node
-            pass #temp
+            # pass #temp
+            operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
+            operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
+            expression_result = operator1 + operator2
+
         elif (expression.elem_type('-')):
-            pass
+            operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
+            operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
+            expression_result = operator1 - operator2
 
         elif (expression.elem_type('var')): # variable node
-            return self.elaluate_expression(self, expression.dict.get('name'))
+            # return self.elaluate_expression(self, expression.dict.get('name'))
+            for var in self.variables: 
+                if (var[0] == expression.dict.get('name', [])): # find variable
+                    if (var[1] is not None):
+                        return var[1]
+                    # else variable empty error
+            # pass
 
         elif (expression.elem_type('string')): #value node
             return expression.dict.get('val', [])
