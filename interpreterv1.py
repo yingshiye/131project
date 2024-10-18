@@ -14,12 +14,14 @@ class Interpreter(InterpreterBase):
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
             expression_result = operator1 + operator2
+            return expression_result
 
         elif (expression.elem_type('-')):
             operator1 = self.evaluate_expression(self, expression.dict.get('op1', []))
             operator2 = self.evaluate_expression(self, expression.dict.get('op2', []))
             expression_result = operator1 - operator2
-
+            return expression_result
+        
         elif (expression.elem_type('var')): # variable node
             # return self.elaluate_expression(self, expression.dict.get('name'))
             for var in self.variables: 
