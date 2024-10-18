@@ -117,11 +117,14 @@ class Interpreter(InterpreterBase):
 
 program_source = """func main() {
     var x;
-    x = 5 + 6 + 7;
-    print("The sum is: ", x);
+    var y;
+    y = 5;
+    x = 5 + 6 - 7;
+
 }
 """
 
+    # print("The sum is: ", x);
 
 a = Interpreter
 a.run(a, program_source)
