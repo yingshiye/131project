@@ -47,12 +47,18 @@ class Interpreter(InterpreterBase):
         elif (expression.elem_type == 'int'): #value node
             return expression.dict.get('val', [])
         
+        elif (expression.dict.get('name') == "inputi"):
+            self.run_fcall(expression)
+        
 
     def run_fcall(self, fcall_Node): #print() and inputi()
-        if (fcall_Node.elem_type == "print"):
+        if (fcall_Node.dict.get('name') == "print"): # can't in the expression
             pass
-        elif (fcall_Node.elem_type == "inputi"): # only one parameter
-            pass
+        elif (fcall_Node.dict.get('name') == "inputi"): # only one or no parameters, need to get input
+            args = fcall_Node.dict.get('args', [])
+            if (len(args) > 1):
+                super().error(ErrorType.NAME_ERROR, f"No inputi() function found that takes > 1 parameter")
+
         else: 
             super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
 
@@ -105,7 +111,7 @@ class Interpreter(InterpreterBase):
                     if (func.dict.get('name') == 'main'):
                         self.run_function(func)
                         return
-                    super().error(ErrorType.NAME_ERROR, "No main()",)
+                    super().error(ErrorType.NAME_ERROR, "No main()")
 
 
             # print(functions)
@@ -141,11 +147,7 @@ class Interpreter(InterpreterBase):
 
 
 # program_source = """func main() {
-#     var x;
-#     var y; 
-#     y = 5; 
-#     x = "hello";
-#     x = x + y;
+#     inputi("enter a #: ", "hello" );
 # }
 # """
 

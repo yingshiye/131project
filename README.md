@@ -12,3 +12,4 @@ a bit confused about the parameter self in python
 10-18
 Can't change the tuple value that variables list of tuple
 
+only need to finish inputi and print, others are done 
