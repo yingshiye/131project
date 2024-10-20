@@ -47,17 +47,24 @@ class Interpreter(InterpreterBase):
         elif (expression.elem_type == 'int'): #value node
             return expression.dict.get('val', [])
         
-        elif (expression.dict.get('name') == "inputi"):
-            self.run_fcall(expression)
-        
 
     def run_fcall(self, fcall_Node): #print() and inputi()
+        argsNode = fcall_Node.dict.get('args', [])
         if (fcall_Node.dict.get('name') == "print"): # can't in the expression
-            pass
+            result = str(self.evaluate_expression(argsNode[0]))
+            for i in range(1, len(argsNode)):
+                if (type(self.evaluate_expression(argsNode[i]) is int)):
+                    result += str(self.evaluate_expression(argsNode[i]))
+                else:
+                    result += self.evaluate_expression(argsNode[i])
+            super().output(result)
+
         elif (fcall_Node.dict.get('name') == "inputi"): # only one or no parameters, need to get input
-            args = fcall_Node.dict.get('args', [])
-            if (len(args) > 1):
+            if (len(argsNode) > 1):
                 super().error(ErrorType.NAME_ERROR, f"No inputi() function found that takes > 1 parameter")
+            argsStr = argsNode[0].dict.get('val')
+            super().output(argsStr);            
+            user_input = super().get_input()
 
         else: 
             super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
@@ -85,10 +92,8 @@ class Interpreter(InterpreterBase):
                     return
                     # print(self.variables)
             super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
-
-
                 # else , which is the variable not exist
-        if (statement_node.elem_type == 'fcall'):
+        if (statement_node.elem_type == 'fcall' and statement_node.dict.get('name') == "print"):
             self.run_fcall(statement_node)
 
     def run_function(self, func_Code): 
@@ -147,7 +152,9 @@ class Interpreter(InterpreterBase):
 
 
 # program_source = """func main() {
-#     inputi("enter a #: ", "hello" );
+#     var x; 
+#     x = 5; 
+#     print("hello", "hello", x);
 # }
 # """
 

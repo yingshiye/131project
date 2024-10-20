@@ -1,0 +1,1 @@
+   result = str(self.evaluate_expression(argsNode[0]));
