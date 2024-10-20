@@ -13,3 +13,10 @@ a bit confused about the parameter self in python
 Can't change the tuple value that variables list of tuple
 
 only need to finish inputi and print, others are done 
+
+
+Note: parsed_program is Element, that has 
+- <Element>.elem_type -> if value is program, it means this node is program node 
+        # if value is func -> funciton node
+- <Element>.dict contains key 
+- <Element>.get(<key>)

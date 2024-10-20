@@ -54,8 +54,8 @@ class Interpreter(InterpreterBase):
     def run_fcall(self, fcall_Node): #print() and inputi()
         argsNode = fcall_Node.dict.get('args', [])
         if (fcall_Node.dict.get('name') == "print"): # can't in the expression
-            result = str(self.evaluate_expression(argsNode[0]))
-            for i in range(1, len(argsNode)):
+            result = ""
+            for i in range(0, len(argsNode)):
                 if (type(self.evaluate_expression(argsNode[i]) is int)):
                     result += str(self.evaluate_expression(argsNode[i]))
                 else:
@@ -132,34 +132,10 @@ class Interpreter(InterpreterBase):
             # print(functions[0].elem_type)
 
 
-        
-        # c = parsed_program.get()
-        # print(c)
-        # function_code = get_main_function_code(parsed_program)
-        # print(parsed_program)
-        # print(Element.get( 'functions'))
-
-        # this.variable_name_to_value = Map()  # dict to hold variables
-		# main_func_node = get_main_func_node(ast)
-		# run_func(main_func_node)
-
-
-    
-
-
-    # Note: parsed_program is Element, that has 
-    # <Element>.elem_type -> if value is program, it means this node is program node 
-        # if value is func -> funciton node
-    # <Element>.dict contains key 
-    # <Element>.get(<key>)
-
-
 
 
 # program_source = """func main() {
-#     var x;
-#     x = 3 - (3 + (2 + inputi()));
-#     print(x);
+#     print();
 # }
 # """
 
@@ -167,14 +143,3 @@ class Interpreter(InterpreterBase):
 
 # a = Interpreter()
 # a.run(program_source)
-
-
-# /*
-# *IN*
-# 15
-# *IN*
-# *OUT*
-# Hello
-# 15
-# *OUT*
-# */
