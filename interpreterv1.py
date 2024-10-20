@@ -56,10 +56,8 @@ class Interpreter(InterpreterBase):
         if (fcall_Node.dict.get('name') == "print"): # can't in the expression
             result = ""
             for i in range(0, len(argsNode)):
-                if (type(self.evaluate_expression(argsNode[i]) is int)):
-                    result += str(self.evaluate_expression(argsNode[i]))
-                else:
-                    result += self.evaluate_expression(argsNode[i])
+                # type(self.evaluate_expression(argsNode[i])) is int
+                result += str(self.evaluate_expression(argsNode[i]))
             super().output(result)
 
         elif (fcall_Node.dict.get('name') == "inputi"): # only one or no parameters, need to get input
@@ -135,11 +133,11 @@ class Interpreter(InterpreterBase):
 
 
 # program_source = """func main() {
-#     print();
+#     var x;
+#     x = inputi("extra argument");
+#     print(x);
 # }
 # """
-
-#     # print("The sum is: ", x);
 
 # a = Interpreter()
 # a.run(program_source)
