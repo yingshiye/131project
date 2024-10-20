@@ -69,6 +69,7 @@ class Interpreter(InterpreterBase):
                 argsStr = argsNode[0].dict.get('val')
                 super().output(argsStr);
             user_input = super().get_input()
+            user_input = int(user_input)
             return user_input
         else: 
             super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
@@ -156,9 +157,9 @@ class Interpreter(InterpreterBase):
 
 
 # program_source = """func main() {
-#     var b; 
-#     b = inputi();
-#     print(b);
+#     var x;
+#     x = 3 - (3 + (2 + inputi()));
+#     print(x);
 # }
 # """
 
