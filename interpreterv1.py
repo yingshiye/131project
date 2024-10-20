@@ -39,13 +39,16 @@ class Interpreter(InterpreterBase):
                     if (var[1] is not None):
                         return var[1]
                     # else variable empty error
-            super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
+            super().error(ErrorType.NAME_ERROR, "variable is not defined")
 
         elif (expression.elem_type == 'string'): #value node
             return expression.dict.get('val', [])
         
         elif (expression.elem_type == 'int'): #value node
             return expression.dict.get('val', [])
+        
+        elif (expression.dict.get('name') == "inputi"):
+            return self.run_fcall(expression)
         
 
     def run_fcall(self, fcall_Node): #print() and inputi()
@@ -62,10 +65,11 @@ class Interpreter(InterpreterBase):
         elif (fcall_Node.dict.get('name') == "inputi"): # only one or no parameters, need to get input
             if (len(argsNode) > 1):
                 super().error(ErrorType.NAME_ERROR, f"No inputi() function found that takes > 1 parameter")
-            argsStr = argsNode[0].dict.get('val')
-            super().output(argsStr);            
+            if (len(argsNode) == 1):
+                argsStr = argsNode[0].dict.get('val')
+                super().output(argsStr);
             user_input = super().get_input()
-
+            return user_input
         else: 
             super().error(ErrorType.NAME_ERROR, f"Function has not been defined")
 
@@ -77,10 +81,10 @@ class Interpreter(InterpreterBase):
             for var in self.variables: 
                 if (var[0] == varName):
                     # print("double defined")
-                    super().error(ErrorType.NAME_ERROR, f"Variable {varName} defined more than once")
+                    super().error(ErrorType.NAME_ERROR, f"Variable is defined more than once")
             self.variables.append((statement_node.dict.get('name'), None))
             # print(self.variables)
-        if (statement_node.elem_type == '='):
+        elif (statement_node.elem_type == '='):
             # print(statement_node.dict.get('name', []))
             for i, var in enumerate(self.variables): # asked gpt about how to chagne tuple inside of the list while looping it 
                 if (var[0] == statement_node.dict.get('name', [])): # find variable
@@ -91,10 +95,13 @@ class Interpreter(InterpreterBase):
                     self.variables[i] = (statement_node.dict.get('name', []), result)
                     return
                     # print(self.variables)
-            super().error(ErrorType.NAME_ERROR, "variable {expression_variable} is not defined")
+            super().error(ErrorType.NAME_ERROR, "variable is not defined")
                 # else , which is the variable not exist
-        if (statement_node.elem_type == 'fcall' and statement_node.dict.get('name') == "print"):
+        elif (statement_node.elem_type == 'fcall' and statement_node.dict.get('name') == "print"):
             self.run_fcall(statement_node)
+        else:
+            super().error(ErrorType.NAME_ERROR, "wrong statement call")
+        
 
     def run_function(self, func_Code): 
         # print(func_Code)
@@ -148,13 +155,10 @@ class Interpreter(InterpreterBase):
 
 
 
-
-
-
 # program_source = """func main() {
-#     var x; 
-#     x = 5; 
-#     print("hello", "hello", x);
+#     var b; 
+#     b = inputi();
+#     print(b);
 # }
 # """
 
@@ -162,3 +166,14 @@ class Interpreter(InterpreterBase):
 
 # a = Interpreter()
 # a.run(program_source)
+
+
+# /*
+# *IN*
+# 15
+# *IN*
+# *OUT*
+# Hello
+# 15
+# *OUT*
+# */
