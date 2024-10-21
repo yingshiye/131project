@@ -20,3 +20,6 @@ Note: parsed_program is Element, that has
         # if value is func -> funciton node
 - <Element>.dict contains key 
 - <Element>.get(<key>)
+
+10-20-2024 12:53AM 
+done 
