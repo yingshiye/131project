@@ -80,6 +80,8 @@ class Interpreter(InterpreterBase):
         inp = super().get_input()
         if call_ast.get("name") == "inputi":
             return Value(Type.INT, int(inp))
+        elif call_ast.get('name') == "inputs": 
+            return Value(Type.STRING, inp)
         # we can support inputs here later
 
     def __assign(self, assign_ast):
