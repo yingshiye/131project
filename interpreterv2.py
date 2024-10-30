@@ -150,10 +150,14 @@ class Interpreter(InterpreterBase):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
         right_value_obj = self.__eval_expr(arith_ast.get("op2"))
         if left_value_obj.type() != right_value_obj.type():
-            super().error(
-                ErrorType.TYPE_ERROR,
-                f"Incompatible types for {arith_ast.elem_type} operation",
-            )
+            if (arith_ast.elem_type == "==" or arith_ast.elem_type == "!="):
+                f = self.op_to_lambda["diff"][arith_ast.elem_type]
+                return f(left_value_obj, right_value_obj)
+            else:
+                super().error(
+                    ErrorType.TYPE_ERROR,
+                    f"Incompatible types for {arith_ast.elem_type} operation",
+                )      
         if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -173,36 +177,43 @@ class Interpreter(InterpreterBase):
             
             "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
             "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
-            ">": lambda x, y: Value(Type.BOOL, x.value() > y.value()),
+            ">":  lambda x, y: Value(Type.BOOL, x.value() > y.value()),
             ">=": lambda x, y: Value(Type.BOOL, x.value() >= y.value()),
-            "<": lambda x, y: Value(Type.BOOL, x.value() < y.value()),
+            "<":  lambda x, y: Value(Type.BOOL, x.value() < y.value()),
             "<=": lambda x, y: Value(Type.BOOL, x.value() <= y.value()),
         }
         
         #string 
         self.op_to_lambda[Type.STRING] = {
-            "+": lambda x, y: Value(x.type(), x.value() + y.value()),
+            "+":  lambda x, y: Value(x.type(), x.value() + y.value()),
             "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
-            "!=":lambda x, y: Value(Type.BOOL, x.value() != y.value()),
+            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
         }
         
         #bool 
         self.op_to_lambda[Type.BOOL] = {
-            "==":lambda x, y: Value(Type.BOOL, x.value() == y.value()),
-            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value())
+            "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
+            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
         }
+        
 
         #mix for the different type == and !=
+        self.op_to_lambda["diff"] = { 
+            "==": lambda x, y: Value(Type.BOOL, x.type() == y.type()),
+            "!=": lambda x, y: Value(Type.BOOL, x.type() != y.type()),
+        }
         
         # add other operators here later for int, string, bool, etc
 
-# test = """func main() {
-# 	var a; 
-#     a = true;
-#     print(false != a);
-# }"""
+test = """
+func main() {
+	var a; 
+    a = true;
+    print(a == "true");
+}
+"""
 
-# a = Interpreter(); 
-# a.run(test)
+a = Interpreter(); 
+a.run(test)
 
 
