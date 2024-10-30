@@ -153,12 +153,21 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.INT]["/"] = lambda x, y: Value(
             x.type(), x.value() / y.value()
         )
+        self.op_to_lambda[Type.STRING] = {}
+        self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(
+            x.type(), x.value() + y.value()
+        )
         
         # add other operators here later for int, string, bool, etc
 
 test = """func main() {
+	var a; 
 	var x; 
-	x = nil;
+	var b;
+    a = "hi";
+    x = "hi"; 
+    b = x+a; 
+    print(b);
 }"""
 
 a = Interpreter(); 
