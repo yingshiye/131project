@@ -11,6 +11,7 @@ from brewparse import parse_program
 class Interpreter(InterpreterBase):
     # constants
     BIN_OPS = {"+", "-", "*", "/"}
+    COMP_OPS = {"==", "!=", "<", "<=", ">", ">="}
 
     # methods
     def __init__(self, console_output=True, inp=None, trace_output=False):
@@ -110,16 +111,23 @@ class Interpreter(InterpreterBase):
             return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return None
+        
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
+        
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast)
-        if expr_ast.elem_type in Interpreter.BIN_OPS:
+        
+        if expr_ast.elem_type in Interpreter.BIN_OPS: # +-*/ for int, + for string
             return self.__eval_op(expr_ast)
+        
+        if expr_ast.elem_type in Interpreter.COMP_OPS: # == != >= > < <=
+            return self.__eval_op(expr_ast)
+        
         if expr_ast.elem_type == InterpreterBase.NEG_NODE:
             pos_val = expr_ast.get("op1") #return list of value
             # print(type(pos_val))
@@ -127,14 +135,15 @@ class Interpreter(InterpreterBase):
             val = val_Value.value() # return the abs value of neg 
             negval = 0 - val # becomse neg
             return Value(Type.INT, negval) #return Value
+        
         if expr_ast.elem_type == InterpreterBase.NOT_NODE:
             bol_val = expr_ast.get("op1")
             bol_Value = self.__eval_expr(bol_val)
             # print(type(bol_Value), "hi")
             if bol_Value.value() == True:
-                return Value(Type.BOOL, InterpreterBase.FALSE_DEF)
+                return Value(Type.BOOL, False)
             elif bol_Value.value() == False:
-                return Value(Type.BOOL, InterpreterBase.FALSE_DEF)
+                return Value(Type.BOOL, True)
 
 
     def __eval_op(self, arith_ast):
@@ -156,34 +165,44 @@ class Interpreter(InterpreterBase):
     def __setup_ops(self):
         self.op_to_lambda = {}
         # set up operations on integers
-        self.op_to_lambda[Type.INT] = {}
-        self.op_to_lambda[Type.INT]["+"] = lambda x, y: Value(
-            x.type(), x.value() + y.value()
-        )
-        self.op_to_lambda[Type.INT]["-"] = lambda x, y: Value(
-            x.type(), x.value() - y.value()
-        )
-        self.op_to_lambda[Type.INT]["*"] = lambda x, y: Value(
-            x.type(), x.value() * y.value()
-        )
-        self.op_to_lambda[Type.INT]["/"] = lambda x, y: Value(
-            x.type(), x.value() / y.value()
-        )
+        self.op_to_lambda[Type.INT] = {
+            "+": lambda x, y: Value(x.type(), x.value() + y.value()),
+            "-": lambda x, y: Value(x.type(), x.value() - y.value()),
+            "*": lambda x, y: Value(x.type(), x.value() * y.value()),
+            "/": lambda x, y: Value(x.type(), x.value() / y.value()),
+            
+            "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
+            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
+            ">": lambda x, y: Value(Type.BOOL, x.value() > y.value()),
+            ">=": lambda x, y: Value(Type.BOOL, x.value() >= y.value()),
+            "<": lambda x, y: Value(Type.BOOL, x.value() < y.value()),
+            "<=": lambda x, y: Value(Type.BOOL, x.value() <= y.value()),
+        }
         
-        self.op_to_lambda[Type.STRING] = {}
-        self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(
-            x.type(), x.value() + y.value()
-        )
+        #string 
+        self.op_to_lambda[Type.STRING] = {
+            "+": lambda x, y: Value(x.type(), x.value() + y.value()),
+            "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
+            "!=":lambda x, y: Value(Type.BOOL, x.value() != y.value()),
+        }
+        
+        #bool 
+        self.op_to_lambda[Type.BOOL] = {
+            "==":lambda x, y: Value(Type.BOOL, x.value() == y.value()),
+            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value())
+        }
+
+        #mix for the different type == and !=
         
         # add other operators here later for int, string, bool, etc
 
-test = """func main() {
-	var a; 
-    a = !true;
-    print(a);
-}"""
+# test = """func main() {
+# 	var a; 
+#     a = true;
+#     print(false != a);
+# }"""
 
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
 
 
