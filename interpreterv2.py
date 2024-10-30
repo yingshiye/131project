@@ -108,6 +108,8 @@ class Interpreter(InterpreterBase):
             return Value(Type.STRING, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
             return Value(Type.BOOL, expr_ast.get("val"))
+        if expr_ast.elem_type == InterpreterBase.NIL_NODE:
+            return None
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
@@ -154,13 +156,12 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-# test = """func main() {
-# 	var x; 
-# 	x = false; 
-#     print(x);
-# }"""
+test = """func main() {
+	var x; 
+	x = nil;
+}"""
 
-# a = Interpreter(); 
-# a.run(test)
+a = Interpreter(); 
+a.run(test)
 
 
