@@ -122,10 +122,20 @@ class Interpreter(InterpreterBase):
             return self.__eval_op(expr_ast)
         if expr_ast.elem_type == InterpreterBase.NEG_NODE:
             pos_val = expr_ast.get("op1") #return list of value
+            # print(type(pos_val))
             val_Value = self.__eval_expr(pos_val) # reutrn Value 
             val = val_Value.value() # return the abs value of neg 
             negval = 0 - val # becomse neg
             return Value(Type.INT, negval) #return Value
+        if expr_ast.elem_type == InterpreterBase.NOT_NODE:
+            bol_val = expr_ast.get("op1")
+            bol_Value = self.__eval_expr(bol_val)
+            # print(type(bol_Value), "hi")
+            if bol_Value.value() == True:
+                return Value(Type.BOOL, InterpreterBase.FALSE_DEF)
+            elif bol_Value.value() == False:
+                return Value(Type.BOOL, InterpreterBase.FALSE_DEF)
+
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -159,6 +169,7 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.INT]["/"] = lambda x, y: Value(
             x.type(), x.value() / y.value()
         )
+        
         self.op_to_lambda[Type.STRING] = {}
         self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(
             x.type(), x.value() + y.value()
@@ -168,10 +179,8 @@ class Interpreter(InterpreterBase):
 
 test = """func main() {
 	var a; 
-	a = -5; 
-	var b; 
-	b = 10 + a; 
-	print(b);
+    a = !true;
+    print(a);
 }"""
 
 a = Interpreter(); 
