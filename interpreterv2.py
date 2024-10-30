@@ -120,6 +120,12 @@ class Interpreter(InterpreterBase):
             return self.__call_func(expr_ast)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
             return self.__eval_op(expr_ast)
+        if expr_ast.elem_type == InterpreterBase.NEG_NODE:
+            pos_val = expr_ast.get("op1") #return list of value
+            val_Value = self.__eval_expr(pos_val) # reutrn Value 
+            val = val_Value.value() # return the abs value of neg 
+            negval = 0 - val # becomse neg
+            return Value(Type.INT, negval) #return Value
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -162,12 +168,10 @@ class Interpreter(InterpreterBase):
 
 test = """func main() {
 	var a; 
-	var x; 
-	var b;
-    a = "hi";
-    x = "hi"; 
-    b = x+a; 
-    print(b);
+	a = -5; 
+	var b; 
+	b = 10 + a; 
+	print(b);
 }"""
 
 a = Interpreter(); 
