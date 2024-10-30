@@ -106,6 +106,8 @@ class Interpreter(InterpreterBase):
             return Value(Type.INT, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.STRING_NODE:
             return Value(Type.STRING, expr_ast.get("val"))
+        if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
+            return Value(Type.BOOL, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.VAR_NODE:
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
@@ -154,8 +156,8 @@ class Interpreter(InterpreterBase):
 
 # test = """func main() {
 # 	var x; 
-# 	x = 5; 
-# 	print(5/5);
+# 	x = false; 
+#     print(x);
 # }"""
 
 # a = Interpreter(); 
