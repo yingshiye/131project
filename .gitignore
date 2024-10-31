@@ -6,3 +6,4 @@ __pycache__/intbase.cpython-313.pyc
 __pycache__/parsetab.cpython-313.pyc
 __pycache__/type_valuev1.cpython-313.pyc
 .DS_Store
+.prettierrc

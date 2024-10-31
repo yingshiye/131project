@@ -53,8 +53,10 @@ class Interpreter(InterpreterBase):
                 self.__var_def(statement)
             elif statement.elem_type == InterpreterBase.IF_NODE: 
                 self.__call_if(statement)
-                
-
+            elif statement.elem_type == InterpreterBase.RETURN_NODE:
+                self.__call_return(statement)
+            elif statement.elem_type == InterpreterBase.FOR_NODE:
+                self.__call_for(statement)
 
     def __call_func(self, call_node):
         func_name = call_node.get("name")
@@ -93,7 +95,7 @@ class Interpreter(InterpreterBase):
     
     def __call_if(self, call_ast):  
         cond_result = self.__eval_expr(call_ast.get("condition")) # evaluate condition, return Value
-        if (cond_result.value()):
+        if cond_result.value():
             self.__run_statements(call_ast.get("statements"))
             # print("hi")
         else:
@@ -102,6 +104,14 @@ class Interpreter(InterpreterBase):
                 self.__run_statements(else_statements)
             # print("by")
         
+    def __call_return(self, call_ast):
+        cond = call_ast.get("expression")
+        # if cond is not None:
+        #     self.__eval_expr(cond)
+        return None #temp
+    
+    def __call_for(self, call_ast):
+        return None
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
@@ -228,23 +238,14 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-# test = """
-# func main() {
-#     if (1 < 2) { print("a"); }
-#     if (1 > 2) { print("b"); }
+test = """
+func main() {
+    if (1 < 2) { return 10; }
+    
+}
+"""
 
-#     if (1 == 2) { print("c"); }
-#     if (1 != 2) { print("d"); }
-
-#     if (1 <= 1) { print("e"); }
-#     if (1 <= 2) { print("f"); }
-
-#     if (1 >= 1) { print("g"); }
-#     if (1 >= 2) { print("h"); }
-# }
-# """
-
-# a = Interpreter(); 
-# a.run(test)
+a = Interpreter(); 
+a.run(test)
 
 
