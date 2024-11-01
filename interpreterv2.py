@@ -5,6 +5,7 @@ from env_v1 import EnvironmentManager
 from type_valuev1 import Type, Value, create_value, get_printable
 from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
+import copy
 
 
 # Main interpreter class
@@ -111,7 +112,22 @@ class Interpreter(InterpreterBase):
         return None #temp
     
     def __call_for(self, call_ast):
-        return None
+        init_cond = call_ast.get("init")
+        check_cond = call_ast.get("condition")
+        update_var = call_ast.get("update")
+        true_statements = call_ast.get("statements")
+        
+        self.__assign(init_cond)
+            # var_name = init_cond.get("name")
+            # var_initV = self.__eval_expr(init_cond.get("expression"))
+            # variable = (var_name, var_initV)
+        cond = self.__eval_expr(check_cond) # return a Value (bool, True/False)
+            # print(type(init_cond))
+        while(cond.value()): # while condition is true
+            self.__run_statements(true_statements)
+            self.__assign(update_var)
+            cond = self.__eval_expr(check_cond)
+        
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
@@ -238,14 +254,16 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-test = """
-func main() {
-    if (1 < 2) { return 10; }
-    
-}
-"""
+# test = """
+# func main() {
+#     var i;
+#     for (i = 3; i > 0; i = i - 1) {
+#         print(i);
+#     }
+# }
+# """
 
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
 
 
