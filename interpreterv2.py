@@ -41,8 +41,17 @@ class Interpreter(InterpreterBase):
             super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
         return self.func_name_to_ast[name]
     
-    def __call_fun(self, call_ast):
-        return None #temp
+    def __execute_func(self, call_ast):
+        # print("check") #temp
+        arg = call_ast.get("args") #only contain the value, not the variable name
+        func = self.__get_func_by_name(call_ast.get("name")) # find the function node
+        statements = func.get("statements") # the statement need to run
+        # print(arg)
+        # idea: 
+        # push the arg var and value into local stack for the function
+        # and then isScope is true to run the whole funciton 
+        # good night 
+        
 
     def __run_statements(self, statements):
         # all statements of a function are held in arg3 of the function AST node
@@ -68,8 +77,10 @@ class Interpreter(InterpreterBase):
             return self.__call_print(call_node)
         if func_name == "inputi":
             return self.__call_input(call_node)
-        if (func_name == "inputs"):
+        if func_name == "inputs":
             return self.__call_input(call_node)
+        if self.__get_func_by_name(call_node.get("name")):
+            return self.__execute_func(call_node)
 
         # add code here later to call other functions
         super().error(ErrorType.NAME_ERROR, f"Function {func_name} not found")
@@ -265,27 +276,22 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-# test = """
-# func main() {
-#   var x;
-#   for (x=0; x < 2; x = x+1) {
-#     var x;
-#     x = -1;
-#     print(x);
-#   }
-#   print(x); 
-# }
+test = """
+func foo(c) { 
+  if (c == 10) {
+    var c;     /* variable of the same name as parameter c */
+    c = "hi";
+    print(c);  /* prints "hi"; the inner c shadows the parameter c*/
+  }
+  print(c); /* prints 10 */
+}
 
-# /*
-# *OUT*
-# -1
-# -1
-# 2
-# *OUT*
-# */
-# """
+func main() {
+  foo(10);
+}
+"""
 
-# a = Interpreter(); 
-# a.run(test)
+a = Interpreter(); 
+a.run(test)
 
 
