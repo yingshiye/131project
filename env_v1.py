@@ -30,7 +30,7 @@ class EnvironmentManager:
         return True
 
     def create(self, symbol, start_val, isScope):
-        if (symbol in self.environment) and (symbol not in self.local): 
+        if (symbol in self.environment) and (symbol in self.local): 
             return False
         if isScope and (symbol not in self.local):
             self.local[symbol] = start_val 

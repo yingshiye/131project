@@ -5,7 +5,6 @@ from env_v1 import EnvironmentManager
 from type_valuev1 import Type, Value, create_value, get_printable
 from intbase import InterpreterBase, ErrorType
 from brewparse import parse_program
-import copy
 
 
 # Main interpreter class
@@ -41,6 +40,9 @@ class Interpreter(InterpreterBase):
         if name not in self.func_name_to_ast:
             super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
         return self.func_name_to_ast[name]
+    
+    def __call_fun(self, call_ast):
+        return None #temp
 
     def __run_statements(self, statements):
         # all statements of a function are held in arg3 of the function AST node
@@ -129,11 +131,14 @@ class Interpreter(InterpreterBase):
         cond = self.__eval_expr(check_cond) # return a Value (bool, True/False)
             # print(type(init_cond))
         while(cond.value()): # while condition is true
+            self.inScope = True
             self.__run_statements(true_statements)
+            self.inScope = False
+            self.env.notInScope()
             self.__assign(update_var)
             cond = self.__eval_expr(check_cond)
-        self.inScope = False
-        self.env.notInScope()
+            
+
         
 
     def __assign(self, assign_ast):
@@ -262,14 +267,22 @@ class Interpreter(InterpreterBase):
 
 # test = """
 # func main() {
-#     var a;
-#     a = 10;
-#     if (5 == 5) {
-#         var b;
-#         b = 10;   /* variable b's scope is the if block */
-#     }
-#     print(b); 
+#   var x;
+#   for (x=0; x < 2; x = x+1) {
+#     var x;
+#     x = -1;
+#     print(x);
+#   }
+#   print(x); 
 # }
+
+# /*
+# *OUT*
+# -1
+# -1
+# 2
+# *OUT*
+# */
 # """
 
 # a = Interpreter(); 
