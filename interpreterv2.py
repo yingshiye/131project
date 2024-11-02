@@ -52,11 +52,11 @@ class Interpreter(InterpreterBase):
                 self.__assign(statement)
             elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
                 self.__var_def(statement)
-            elif statement.elem_type == InterpreterBase.IF_NODE: 
+            elif statement.elem_type == InterpreterBase.IF_NODE: # need scope
                 self.__call_if(statement)
-            elif statement.elem_type == InterpreterBase.RETURN_NODE:
+            elif statement.elem_type == InterpreterBase.RETURN_NODE: # return what's in the scope first 
                 self.__call_return(statement)
-            elif statement.elem_type == InterpreterBase.FOR_NODE:
+            elif statement.elem_type == InterpreterBase.FOR_NODE: # need scope 
                 self.__call_for(statement)
 
     def __call_func(self, call_node):
@@ -107,8 +107,8 @@ class Interpreter(InterpreterBase):
         
     def __call_return(self, call_ast):
         cond = call_ast.get("expression")
-        # if cond is not None:
-        #     self.__eval_expr(cond)
+        if cond is not None:
+            return self.__eval_expr(cond)
         return None #temp
     
     def __call_for(self, call_ast):
@@ -189,8 +189,7 @@ class Interpreter(InterpreterBase):
                 return Value(Type.BOOL, False)
             elif bol_Value.value() == False:
                 return Value(Type.BOOL, True)
-        
-
+            
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -254,16 +253,21 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-# test = """
-# func main() {
-#     var i;
-#     for (i = 3; i > 0; i = i - 1) {
-#         print(i);
-#     }
-# }
-# """
+test = """
+func main() {
+    var a;
+    a = 5;        /* variable a's scope is the function's block */
+    if (a == 5) {
+        var b;
+        b = 10;   /* variable b's scope is the if block */
+        a = 6;
+    } /* variable b goes out of scope */
+  print(a); /* works fine since a is still in scope, prints 6 */
+  print(b); /* generates an error of ErrorType.NAME_ERROR */
+} /* variable a goes out of scope */
+"""
 
-# a = Interpreter(); 
-# a.run(test)
+a = Interpreter(); 
+a.run(test)
 
 
