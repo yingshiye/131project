@@ -21,17 +21,18 @@ class EnvironmentManager:
 
     # Sets the data associated with a variable name
     def set(self, symbol, value, isScope): # when to set the local and environment
-        if symbol not in self.environment and self.local:
+        if (symbol not in self.environment) and (symbol not in self.local):
             return False
-        if isScope and symbol in self.local:
+        if isScope and (symbol in self.local):
             self.local[symbol] = value
+            return True
         self.environment[symbol] = value
         return True
 
     def create(self, symbol, start_val, isScope):
-        if symbol in self.environment and self.local: 
+        if (symbol in self.environment) and (symbol not in self.local): 
             return False
-        if isScope and symbol not in self.local:
+        if isScope and (symbol not in self.local):
             self.local[symbol] = start_val 
             return True
         self.environment[symbol] = start_val 

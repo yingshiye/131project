@@ -260,19 +260,19 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-test = """
-func main() {
-    var a;
-    a = 10;
-    if (5 == 5) {
-        var b;
-        b = 10;   /* variable b's scope is the if block */
-    }
-    print(b); 
-}
-"""
+# test = """
+# func main() {
+#     var a;
+#     a = 10;
+#     if (5 == 5) {
+#         var b;
+#         b = 10;   /* variable b's scope is the if block */
+#     }
+#     print(b); 
+# }
+# """
 
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
 
 
