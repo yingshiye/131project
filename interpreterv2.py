@@ -148,9 +148,6 @@ class Interpreter(InterpreterBase):
             self.env.notInScope()
             self.__assign(update_var)
             cond = self.__eval_expr(check_cond)
-            
-
-        
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
@@ -277,17 +274,20 @@ class Interpreter(InterpreterBase):
         # add other operators here later for int, string, bool, etc
 
 test = """
-func foo(c) { 
-  if (c == 10) {
-    var c;     /* variable of the same name as parameter c */
-    c = "hi";
-    print(c);  /* prints "hi"; the inner c shadows the parameter c*/
-  }
-  print(c); /* prints 10 */
-}
-
 func main() {
-  foo(10);
+  var x;
+  x = 10;
+  if (x == 10){
+    var c; 
+    c = 20; 
+    if (c == 20){
+      var b; 
+      b = 30; 
+      print(b);
+    }
+    print(c);
+  }
+  print(x);
 }
 """
 
