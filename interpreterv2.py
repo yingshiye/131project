@@ -20,6 +20,7 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)
         self.trace_output = trace_output
         self.__setup_ops()
+        self.inScope = False
 
     # run a program that's provided in a string
     # usese the provided Parser found in brewparse.py to parse the program
@@ -95,6 +96,7 @@ class Interpreter(InterpreterBase):
         # we can support inputs here later
     
     def __call_if(self, call_ast):  
+        self.inScope = True
         cond_result = self.__eval_expr(call_ast.get("condition")) # evaluate condition, return Value
         if cond_result.value():
             self.__run_statements(call_ast.get("statements"))
@@ -103,6 +105,8 @@ class Interpreter(InterpreterBase):
             else_statements = call_ast.get("else_statements")
             if else_statements is not None:
                 self.__run_statements(else_statements)
+        self.inScope = False
+        self.env.notInScope()
             # print("by")
         
     def __call_return(self, call_ast):
@@ -112,6 +116,7 @@ class Interpreter(InterpreterBase):
         return None #temp
     
     def __call_for(self, call_ast):
+        self.inScope = True
         init_cond = call_ast.get("init")
         check_cond = call_ast.get("condition")
         update_var = call_ast.get("update")
@@ -127,19 +132,21 @@ class Interpreter(InterpreterBase):
             self.__run_statements(true_statements)
             self.__assign(update_var)
             cond = self.__eval_expr(check_cond)
+        self.inScope = False
+        self.env.notInScope()
         
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         value_obj = self.__eval_expr(assign_ast.get("expression"))
-        if not self.env.set(var_name, value_obj):
+        if not self.env.set(var_name, value_obj, self.inScope):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
 
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
-        if not self.env.create(var_name, Value(Type.INT, 0)):
+        if not self.env.create(var_name, Value(Type.INT, 0), self.inScope):
             super().error(
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
@@ -256,15 +263,13 @@ class Interpreter(InterpreterBase):
 test = """
 func main() {
     var a;
-    a = 5;        /* variable a's scope is the function's block */
-    if (a == 5) {
+    a = 10;
+    if (5 == 5) {
         var b;
         b = 10;   /* variable b's scope is the if block */
-        a = 6;
-    } /* variable b goes out of scope */
-  print(a); /* works fine since a is still in scope, prints 6 */
-  print(b); /* generates an error of ErrorType.NAME_ERROR */
-} /* variable a goes out of scope */
+    }
+    print(b); 
+}
 """
 
 a = Interpreter(); 

@@ -6,14 +6,17 @@
 class EnvironmentManager:
     def __init__(self):
         self.environment = {}
-        self.local = [] # stack 
+        self.local = {} # stack 
+        
+    def notInScope(self):
+        self.local = {}
 
     # Gets the data associated a variable name
     def get(self, symbol):
         if symbol in self.local:
             return self.local[symbol]
         elif symbol in self.environment:
-            return self.local[symbol]
+            return self.environment[symbol]
         return None
 
     # Sets the data associated with a variable name
@@ -26,7 +29,12 @@ class EnvironmentManager:
         return True
 
     def create(self, symbol, start_val, isScope):
-        if symbol not in self.environment and self.loca: 
-            self.environment[symbol] = start_val 
+        if symbol in self.environment and self.local: 
+            return False
+        if isScope and symbol not in self.local:
+            self.local[symbol] = start_val 
             return True
-        return False
+        self.environment[symbol] = start_val 
+        return True
+        
+            
