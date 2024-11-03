@@ -5,37 +5,57 @@
 
 class EnvironmentManager:
     def __init__(self):
-        self.environment = {}
-        self.local = {} # stack 
+        self.environment = [{}] #
         
     def notInScope(self):
-        self.local = {}
+        self.environment.pop()
+        
+    def new_scope(self):
+        if len(self.environment > 1):
+            self.environment.append({})
 
     # Gets the data associated a variable name
-    def get(self, symbol):
-        if symbol in self.local:
-            return self.local[symbol]
-        elif symbol in self.environment:
-            return self.environment[symbol]
+    def get(self, symbol): # need to trace from the top to the bottom, in a stack or list
+        reverse_list = list(reversed(self.environment))
+        for dicti in reverse_list: #reverse a list, so sho
+            if symbol in dicti:
+                return dicti[symbol]
         return None
-
+        # if symbol in self.local:
+        #     return self.local[symbol]
+        # elif symbol in self.environment:
+        #     return self.environment[symbol]
+        # return None
+    
     # Sets the data associated with a variable name
-    def set(self, symbol, value, isScope): # when to set the local and environment
-        if (symbol not in self.environment) and (symbol not in self.local):
-            return False
-        if isScope and (symbol in self.local):
-            self.local[symbol] = value
-            return True
-        self.environment[symbol] = value
-        return True
+    def set(self, symbol, value): # when to set the local and environment
+        # if (symbol not in self.environment) and (symbol not in self.local):
+        #     return False
+        # if isScope and (symbol in self.local):
+        #     self.local[symbol] = value
+        #     return True
+        # self.environment[symbol] = value
+        # return True
+    
+        reverse_list = list(reversed(self.environment))
+        for dicti in reverse_list: #reverse a list, so sho
+            if symbol in dicti:
+                dicti[symbol] = value
+                return True
+        return False
 
-    def create(self, symbol, start_val, isScope):
-        if (symbol in self.environment) and (symbol in self.local): 
-            return False
-        if isScope and (symbol not in self.local):
-            self.local[symbol] = start_val 
+    def create(self, symbol, start_val):
+        # if (symbol in self.environment) and (symbol in self.local): 
+        #     return False
+        # if isScope and (symbol not in self.local):
+        #     self.local[symbol] = start_val 
+        #     return True
+        # self.environment[symbol] = start_val 
+        # return True
+        
+        if symbol not in self.environment.top():
+            self.environment.top()[symbol] = start_val
             return True
-        self.environment[symbol] = start_val 
-        return True
+        return False
         
             
