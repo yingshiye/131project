@@ -47,6 +47,9 @@ class Interpreter(InterpreterBase):
     def __execute_func(self, call_ast):
         # print("check") #temp
         passIn_arg = call_ast.get("args") #only contain the value, not the variable name
+        passIn_argV = []
+        for v in passIn_arg: 
+            passIn_argV.append(self.__eval_expr(v))
         # ard has function name, the argument pass in 
         # print(arg)
         func = self.__get_func_by_name(call_ast.get("name"), len(passIn_arg)) # find the function node
@@ -56,9 +59,9 @@ class Interpreter(InterpreterBase):
         # print(passIn_arg) # the pass in argument value 
         self.env.new_scope()
         # put arguments into the function scope
-        for arg1, arg2 in zip(func_arg, passIn_arg):
+        for arg1, arg2 in zip(func_arg, passIn_argV):
             var_name = arg1.get("name")
-            var_value = self.__eval_expr(arg2)
+            var_value = arg2
             self.env.create(var_name, var_value)
         #run statement
         returnValue = self.__run_statements(func_statements)
@@ -337,19 +340,29 @@ class Interpreter(InterpreterBase):
 
 
 
-# test = """
-# func main() {
-#   print(-true);
-# }
+test = """
+func main() {
+    f(10);
+}
 
-# /*
-# *OUT*
-# ErrorType.TYPE_ERROR
-# *OUT*
-# */
-# """
+func f(x){
+    var y;
+    y = x + 15;
+    g(x);
+}
 
-# a = Interpreter(); 
-# a.run(test)
+func g(x){
+    var z;
+    z = x + y;
+}
+
+/*
+Output: Exception: ErrorType.NAME_ERROR: Variable y not found
+*/
+
+"""
+
+a = Interpreter(); 
+a.run(test)
 
 

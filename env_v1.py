@@ -2,7 +2,7 @@
 # in a brewin program and the value of that variable - the value that's passed in can be
 # anything you like. In our implementation we pass in a Value object which holds a type
 # and a value (e.g., Int, 10).
-
+from intbase import ErrorType
 class EnvironmentManager:
     def __init__(self):
         self.environment = [{}] # list of dict (try to act like stack?????)
@@ -21,6 +21,9 @@ class EnvironmentManager:
             if symbol in dicti:
                 return dicti[symbol]
         return None
+        # if symbol in self.environment[-1]: #reverse a list, so sho
+        #     return self.environment[-1][symbol]
+        # return None
         # if symbol in self.local:
         #     return self.local[symbol]
         # elif symbol in self.environment:
@@ -36,7 +39,7 @@ class EnvironmentManager:
         #     return True
         # self.environment[symbol] = value
         # return True
-        reverse_list = list(reversed(self.environment))
+        reverse_list = reversed(self.environment)
         for dicti in reverse_list: #reverse a list, so sho
             if symbol in dicti:
                 dicti[symbol] = value
