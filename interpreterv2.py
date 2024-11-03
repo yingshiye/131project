@@ -34,23 +34,22 @@ class Interpreter(InterpreterBase):
     def __set_up_function_table(self, ast):
         self.func_name_to_ast = {}
         for func_def in ast.get("functions"):
-            self.func_name_to_ast[func_def.get("name")] = func_def
+            self.func_name_to_ast[(func_def.get("name"), len(func_def.get("args")))] = func_def
 
     def __get_func_by_name(self, name, arg_len):
-        if name not in self.func_name_to_ast:
-            super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
-        if name == "main":
-            return self.func_name_to_ast["main"]
-        for func in self.func_name_to_ast:
-            if func is name and len(self.func_name_to_ast[name].get("args")) == arg_len:
-                return self.func_name_to_ast[func]
+        key = (name, arg_len)
+        if key in self.func_name_to_ast:
+            return self.func_name_to_ast[key]
+        # if name not in self.func_name_to_ast:
+        super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
+
     
     def __execute_func(self, call_ast):
         # print("check") #temp
         passIn_arg = call_ast.get("args") #only contain the value, not the variable name
         # ard has function name, the argument pass in 
         # print(arg)
-        func = self.__get_func_by_name(call_ast.get("name")) # find the function node
+        func = self.__get_func_by_name(call_ast.get("name"), len(passIn_arg)) # find the function node
         func_statements = func.get("statements") # the statement need to run
         func_arg = func.get("args")
         # print(func_arg) # contiain the arg name
@@ -197,8 +196,10 @@ class Interpreter(InterpreterBase):
             # print(type(init_cond))
         while(cond.value()): # while condition is true
             self.env.new_scope()
-            self.__run_statements(true_statements)
+            returnValue = self.__run_statements(true_statements)
             self.env.notInScope()
+            if returnValue is not None: 
+                return returnValue
             self.__assign(update_var)
             cond = self.__eval_expr(check_cond)
 
@@ -219,7 +220,7 @@ class Interpreter(InterpreterBase):
 
     def __eval_expr(self, expr_ast):
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
-            return Value(Type.INT, expr_ast.get("val"))
+            return Value(Type.INT, int(expr_ast.get("val")))
         if expr_ast.elem_type == InterpreterBase.STRING_NODE:
             return Value(Type.STRING, expr_ast.get("val"))
         if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
@@ -231,7 +232,8 @@ class Interpreter(InterpreterBase):
             var_name = expr_ast.get("name")
             val = self.env.get(var_name)
             if val is None:
-                super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
+                super().error(
+                    ErrorType.NAME_ERROR, f"Variable {var_name} not found")
             return val
         
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
@@ -248,6 +250,10 @@ class Interpreter(InterpreterBase):
         
         if expr_ast.elem_type == InterpreterBase.NEG_NODE: # negative value
             pos_val = expr_ast.get("op1") #return list of value
+            if pos_val.elem_type != InterpreterBase.INT_NODE:
+                super().error(
+                    ErrorType.TYPE_ERROR, f"neg_node only works for integer",
+                )     
             # print(type(pos_val))
             val_Value = self.__eval_expr(pos_val) # reutrn Value 
             val = val_Value.value() # return the abs value of neg 
@@ -273,8 +279,7 @@ class Interpreter(InterpreterBase):
                 return f(left_value_obj, right_value_obj)
             else:
                 super().error(
-                    ErrorType.TYPE_ERROR,
-                    f"Incompatible types for {arith_ast.elem_type} operation",
+                    ErrorType.TYPE_ERROR, f"Incompatible types for {arith_ast.elem_type} operation",
                 )      
         if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
             super().error(
@@ -291,7 +296,7 @@ class Interpreter(InterpreterBase):
             "+": lambda x, y: Value(x.type(), x.value() + y.value()),
             "-": lambda x, y: Value(x.type(), x.value() - y.value()),
             "*": lambda x, y: Value(x.type(), x.value() * y.value()),
-            "/": lambda x, y: Value(x.type(), x.value() / y.value()),
+            "/": lambda x, y: Value(x.type(), int(x.value() / y.value())),
             
             "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
             "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
@@ -332,30 +337,19 @@ class Interpreter(InterpreterBase):
 
 
 
-test = """
-func foo(a) {
-  print(a);
-}
+# test = """
+# func main() {
+#   print(-true);
+# }
 
-func foo(a,b) {
-  print(a," ",b);
-}
+# /*
+# *OUT*
+# ErrorType.TYPE_ERROR
+# *OUT*
+# */
+# """
 
-func main() {
-  foo(5);
-  foo(6,7);
-}
-
-/*
-*OUT*
-5
-6 7
-*OUT*
-*/
-
-"""
-
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
 
 
