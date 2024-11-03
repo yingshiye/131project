@@ -341,25 +341,22 @@ class Interpreter(InterpreterBase):
 
 
 test = """
+func g(){
+    print(x);
+}
+
+func f(){
+    var x;
+    x = 4;
+    g();
+}
 func main() {
-    f(10);
-}
-
-func f(x){
-    var y;
-    y = x + 15;
-    g(x);
-}
-
-func g(x){
-    var z;
-    z = x + y;
+    f();
 }
 
 /*
-Output: Exception: ErrorType.NAME_ERROR: Variable y not found
+ErrorType.NAME_ERROR: Variable x not found
 */
-
 """
 
 a = Interpreter(); 
