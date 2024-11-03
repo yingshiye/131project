@@ -8,11 +8,11 @@ class EnvironmentManager:
         self.environment = [{}] # list of dict (try to act like stack?????)
         
     def notInScope(self):
-        self.environment.pop()
+        if len(self.environment) > 1:
+            self.environment.pop()
         
     def new_scope(self):
-        if len(self.environment) > 1:
-            self.environment.append({})
+        self.environment.append({})
 
     # Gets the data associated a variable name
     def get(self, symbol): # need to trace from the top to the bottom, in a stack or list
@@ -51,9 +51,10 @@ class EnvironmentManager:
         #     return True
         # self.environment[symbol] = start_val 
         # return True
-        if symbol not in self.environment[-1]:
+        if symbol in self.environment[-1]:
+            return False
+        else:
             self.environment[-1][symbol] = start_val
             return True
-        return False
         
         

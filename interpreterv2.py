@@ -19,7 +19,7 @@ class Interpreter(InterpreterBase):
         super().__init__(console_output, inp)
         self.trace_output = trace_output
         self.__setup_ops()
-        self.inScope = False
+        # self.inScope = False
 
     # run a program that's provided in a string
     # usese the provided Parser found in brewparse.py to parse the program
@@ -43,15 +43,30 @@ class Interpreter(InterpreterBase):
     
     def __execute_func(self, call_ast):
         # print("check") #temp
-        arg = call_ast.get("args") #only contain the value, not the variable name
-        func = self.__get_func_by_name(call_ast.get("name")) # find the function node
-        statements = func.get("statements") # the statement need to run
+        passIn_arg = call_ast.get("args") #only contain the value, not the variable name
+        # ard has function name, the argument pass in 
         # print(arg)
+        func = self.__get_func_by_name(call_ast.get("name")) # find the function node
+        func_statements = func.get("statements") # the statement need to run
+        func_arg = func.get("args")
+        # print(func_arg) # contiain the arg name
+        # print(passIn_arg) # the pass in argument value 
+        self.env.new_scope()
+        # put arguments into the function scope
+        for arg1, arg2 in zip(func_arg, passIn_arg):
+            var_name = arg1.get("name")
+            var_value = self.__eval_expr(arg2)
+            self.env.create(var_name, var_value)
+        #run statement
+        self.__run_statements(func_statements)
+        
+        
         # idea: 
         # push the arg var and value into local stack for the function
         # and then isScope is true to run the whole funciton 
         # good night 
-        
+        # the argument pass into func should be in the local scope which is the function scope
+        # life is too freaking good 
 
     def __run_statements(self, statements):
         # all statements of a function are held in arg3 of the function AST node
@@ -113,6 +128,7 @@ class Interpreter(InterpreterBase):
         if cond_result.value():
             self.env.new_scope()
             self.__run_statements(call_ast.get("statements"))
+            self.env.notInScope()
             # print("hi")
         else:
             else_statements = call_ast.get("else_statements")
@@ -126,10 +142,9 @@ class Interpreter(InterpreterBase):
         cond = call_ast.get("expression")
         if cond is not None:
             return self.__eval_expr(cond)
-        return None #temp
     
     def __call_for(self, call_ast):
-        self.inScope = True
+        # self.inScope = True
         init_cond = call_ast.get("init")
         check_cond = call_ast.get("condition")
         update_var = call_ast.get("update")
@@ -272,25 +287,22 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-test = """
-func main() {
-  var x;
-  x = 10;
-  if (x == 10){
-    var c; 
-    c = 20; 
-    if (c == 20){
-      var b; 
-      b = 30; 
-      print(b);
-    }
-    print(c);
-  }
-  print(x);
-}
-"""
+# test = """
+# func foo(c) { 
+#   if (c == 10) {
+#     var c;     /* variable of the same name as parameter c */
+#     c = "hi";
+#     print(c);  /* prints "hi"; the inner c shadows the parameter c*/
+#   }
+#   print(c); /* prints 10 */
+# }
 
-a = Interpreter(); 
-a.run(test)
+# func main() {
+#   foo(10);
+# }
+# """
+
+# a = Interpreter(); 
+# a.run(test)
 
 
