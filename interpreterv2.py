@@ -27,7 +27,7 @@ class Interpreter(InterpreterBase):
     def run(self, program):
         ast = parse_program(program)
         self.__set_up_function_table(ast)
-        main_func = self.__get_func_by_name("main")
+        main_func = self.__get_func_by_name("main", 0)
         self.env = EnvironmentManager()
         self.__run_statements(main_func.get("statements"))
 
@@ -36,10 +36,14 @@ class Interpreter(InterpreterBase):
         for func_def in ast.get("functions"):
             self.func_name_to_ast[func_def.get("name")] = func_def
 
-    def __get_func_by_name(self, name):
+    def __get_func_by_name(self, name, arg_len):
         if name not in self.func_name_to_ast:
             super().error(ErrorType.NAME_ERROR, f"Function {name} not found")
-        return self.func_name_to_ast[name]
+        if name == "main":
+            return self.func_name_to_ast["main"]
+        for func in self.func_name_to_ast:
+            if func is name and len(self.func_name_to_ast[name].get("args")) == arg_len:
+                return self.func_name_to_ast[func]
     
     def __execute_func(self, call_ast):
         # print("check") #temp
@@ -60,13 +64,18 @@ class Interpreter(InterpreterBase):
         #run statement
         returnValue = self.__run_statements(func_statements)
         self.env.notInScope()
-        containReturn = False
-        for statement in func_statements: 
-            if statement.elem_type == "return" and statement.get("expression").elem_type is not "nil":
-                containReturn = True
-                return returnValue
-        if containReturn == False: 
+        if returnValue is not None: 
+            return returnValue
+        else:
             return Value(Type.NIL, None)
+        
+        # containReturn = False
+        # for statement in func_statements: 
+        #     if statement.elem_type == "return" and statement.get("expression").elem_type != "nil":
+        #         containReturn = True
+        #         return returnValue
+        # if containReturn == False: 
+        #     return Value(Type.NIL, None)
         
         
         # idea: 
@@ -82,27 +91,35 @@ class Interpreter(InterpreterBase):
             if self.trace_output:
                 print(statement)
             if statement.elem_type == InterpreterBase.FCALL_NODE:
-                self.__call_func(statement)
+                returnValue = self.__call_func(statement)
+                if returnValue is not None: 
+                    if (type(returnValue) is Value) and returnValue.value() is not None:
+                        return returnValue
             elif statement.elem_type == "=":
                 self.__assign(statement)
             elif statement.elem_type == InterpreterBase.VAR_DEF_NODE:
                 self.__var_def(statement)
             elif statement.elem_type == InterpreterBase.IF_NODE: # need scope
-                self.__call_if(statement)
+                returnValue = self.__call_if(statement)
+                if returnValue is not None: 
+                    return returnValue
             elif statement.elem_type == InterpreterBase.RETURN_NODE: # return what's in the scope first 
-                self.__call_return(statement)
+                return self.__call_return(statement)
             elif statement.elem_type == InterpreterBase.FOR_NODE: # need scope 
-                self.__call_for(statement)
+                returnValue = self.__call_for(statement)
+                if returnValue is not None: 
+                    return returnValue
 
     def __call_func(self, call_node):
         func_name = call_node.get("name")
+        arg_len = len(call_node.get("args"))
         if func_name == "print":
             return self.__call_print(call_node)
         if func_name == "inputi":
             return self.__call_input(call_node)
         if func_name == "inputs":
             return self.__call_input(call_node)
-        if self.__get_func_by_name(call_node.get("name")):
+        if self.__get_func_by_name(call_node.get("name"), arg_len):
             return self.__execute_func(call_node)
 
         # add code here later to call other functions
@@ -114,6 +131,7 @@ class Interpreter(InterpreterBase):
             result = self.__eval_expr(arg)  # result is a Value object
             output = output + get_printable(result)
         super().output(output)
+        return Value(Type.NIL, None)
 
     def __call_input(self, call_ast):
         args = call_ast.get("args")
@@ -133,22 +151,29 @@ class Interpreter(InterpreterBase):
     
     def __call_if(self, call_ast):  
         cond_result = self.__eval_expr(call_ast.get("condition")) # evaluate condition, return Value
+        if cond_result.type() is not Type.BOOL:
+            super().error(
+                ErrorType.TYPE_ERROR, "need Boolean to evalute the condition"
+            )
         if cond_result.value():
             self.env.new_scope()
-            self.__run_statements(call_ast.get("statements"))
+            returnValue = self.__run_statements(call_ast.get("statements"))
             self.env.notInScope()
+            return returnValue
             # print("hi")
         else:
             else_statements = call_ast.get("else_statements")
             if else_statements is not None:
                 self.env.new_scope()
-                self.__run_statements(else_statements)
+                returnValue = self.__run_statements(else_statements)
                 self.env.notInScope()
+                return returnValue
             # print("by")
+        
         
     def __call_return(self, call_ast):
         cond = call_ast.get("expression")
-        if cond is not None and cond.elem_type is not "nil":
+        if cond is not None and cond.elem_type != "nil":
             return self.__eval_expr(cond)
         else: 
             return Value(Type.NIL, None)
@@ -165,6 +190,10 @@ class Interpreter(InterpreterBase):
             # var_initV = self.__eval_expr(init_cond.get("expression"))
             # variable = (var_name, var_initV)
         cond = self.__eval_expr(check_cond) # return a Value (bool, True/False)
+        if cond.type() is not Type.BOOL:
+            super().error(
+                ErrorType.TYPE_ERROR, "need Boolean to evalute the condition"
+            )
             # print(type(init_cond))
         while(cond.value()): # while condition is true
             self.env.new_scope()
@@ -304,14 +333,26 @@ class Interpreter(InterpreterBase):
 
 
 test = """
-func main() {
-  print(fact(5));
+func foo(a) {
+  print(a);
 }
 
-func fact(n) {
-  if (n <= 1) { return 1; }
-  return n * fact(n-1);
+func foo(a,b) {
+  print(a," ",b);
 }
+
+func main() {
+  foo(5);
+  foo(6,7);
+}
+
+/*
+*OUT*
+5
+6 7
+*OUT*
+*/
+
 """
 
 a = Interpreter(); 
