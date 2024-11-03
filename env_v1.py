@@ -5,13 +5,13 @@
 
 class EnvironmentManager:
     def __init__(self):
-        self.environment = [{}] #
+        self.environment = [{}] # list of dict (try to act like stack?????)
         
     def notInScope(self):
         self.environment.pop()
         
     def new_scope(self):
-        if len(self.environment > 1):
+        if len(self.environment) > 1:
             self.environment.append({})
 
     # Gets the data associated a variable name
@@ -36,7 +36,6 @@ class EnvironmentManager:
         #     return True
         # self.environment[symbol] = value
         # return True
-    
         reverse_list = list(reversed(self.environment))
         for dicti in reverse_list: #reverse a list, so sho
             if symbol in dicti:
@@ -52,10 +51,9 @@ class EnvironmentManager:
         #     return True
         # self.environment[symbol] = start_val 
         # return True
-        
-        if symbol not in self.environment.top():
-            self.environment.top()[symbol] = start_val
+        if symbol not in self.environment[-1]:
+            self.environment[-1][symbol] = start_val
             return True
         return False
         
-            
+        

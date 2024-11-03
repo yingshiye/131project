@@ -5,6 +5,8 @@ Scope
 - global - env
 - local - stack or dict? 
 - need to check the scope, maybe a bool to inidiciate inner scope? 
+update
+    BOOL IS NOT FREAKING WORKING HATE MY LIFE 
 
 when enter if, for, new function
 - scope for local variable 

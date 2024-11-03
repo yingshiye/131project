@@ -109,17 +109,17 @@ class Interpreter(InterpreterBase):
         # we can support inputs here later
     
     def __call_if(self, call_ast):  
-        self.inScope = True
         cond_result = self.__eval_expr(call_ast.get("condition")) # evaluate condition, return Value
         if cond_result.value():
+            self.env.new_scope()
             self.__run_statements(call_ast.get("statements"))
             # print("hi")
         else:
             else_statements = call_ast.get("else_statements")
             if else_statements is not None:
+                self.env.new_scope()
                 self.__run_statements(else_statements)
-        self.inScope = False
-        self.env.notInScope()
+                self.env.notInScope()
             # print("by")
         
     def __call_return(self, call_ast):
@@ -142,9 +142,8 @@ class Interpreter(InterpreterBase):
         cond = self.__eval_expr(check_cond) # return a Value (bool, True/False)
             # print(type(init_cond))
         while(cond.value()): # while condition is true
-            self.inScope = True
+            self.env.new_scope()
             self.__run_statements(true_statements)
-            self.inScope = False
             self.env.notInScope()
             self.__assign(update_var)
             cond = self.__eval_expr(check_cond)
@@ -152,14 +151,14 @@ class Interpreter(InterpreterBase):
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         value_obj = self.__eval_expr(assign_ast.get("expression"))
-        if not self.env.set(var_name, value_obj, self.inScope):
+        if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
 
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
-        if not self.env.create(var_name, Value(Type.INT, 0), self.inScope):
+        if not self.env.create(var_name, Value(Type.INT, 0)):
             super().error(
                 ErrorType.NAME_ERROR, f"Duplicate definition for variable {var_name}"
             )
