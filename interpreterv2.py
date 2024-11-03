@@ -58,7 +58,15 @@ class Interpreter(InterpreterBase):
             var_value = self.__eval_expr(arg2)
             self.env.create(var_name, var_value)
         #run statement
-        self.__run_statements(func_statements)
+        returnValue = self.__run_statements(func_statements)
+        self.env.notInScope()
+        containReturn = False
+        for statement in func_statements: 
+            if statement.elem_type == "return" and statement.get("expression").elem_type is not "nil":
+                containReturn = True
+                return returnValue
+        if containReturn == False: 
+            return Value(Type.NIL, None)
         
         
         # idea: 
@@ -140,8 +148,10 @@ class Interpreter(InterpreterBase):
         
     def __call_return(self, call_ast):
         cond = call_ast.get("expression")
-        if cond is not None:
+        if cond is not None and cond.elem_type is not "nil":
             return self.__eval_expr(cond)
+        else: 
+            return Value(Type.NIL, None)
     
     def __call_for(self, call_ast):
         # self.inScope = True
@@ -277,6 +287,10 @@ class Interpreter(InterpreterBase):
             "&&": lambda x, y: Value(Type.BOOL, x.value() and y.value()),
         }
         
+        self.op_to_lambda[Type.NIL] = {
+            "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
+            "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
+        }
 
         # mix for the different type == and !=
         # asked chatgpt for hint about the "diff"
@@ -287,22 +301,20 @@ class Interpreter(InterpreterBase):
         
         # add other operators here later for int, string, bool, etc
 
-# test = """
-# func foo(c) { 
-#   if (c == 10) {
-#     var c;     /* variable of the same name as parameter c */
-#     c = "hi";
-#     print(c);  /* prints "hi"; the inner c shadows the parameter c*/
-#   }
-#   print(c); /* prints 10 */
-# }
 
-# func main() {
-#   foo(10);
-# }
-# """
 
-# a = Interpreter(); 
-# a.run(test)
+test = """
+func main() {
+  print(fact(5));
+}
+
+func fact(n) {
+  if (n <= 1) { return 1; }
+  return n * fact(n-1);
+}
+"""
+
+a = Interpreter(); 
+a.run(test)
 
 

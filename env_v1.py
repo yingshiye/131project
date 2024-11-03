@@ -8,7 +8,7 @@ class EnvironmentManager:
         self.environment = [{}] # list of dict (try to act like stack?????)
         
     def notInScope(self):
-        if len(self.environment) > 1:
+        if len(self.environment) > 1:  
             self.environment.pop()
         
     def new_scope(self):
