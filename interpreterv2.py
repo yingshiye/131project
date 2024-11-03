@@ -299,7 +299,7 @@ class Interpreter(InterpreterBase):
             "+": lambda x, y: Value(x.type(), x.value() + y.value()),
             "-": lambda x, y: Value(x.type(), x.value() - y.value()),
             "*": lambda x, y: Value(x.type(), x.value() * y.value()),
-            "/": lambda x, y: Value(x.type(), int(x.value() / y.value())),
+            "/": lambda x, y: Value(x.type(), int(x.value() // y.value())),
             
             "==": lambda x, y: Value(Type.BOOL, x.value() == y.value()),
             "!=": lambda x, y: Value(Type.BOOL, x.value() != y.value()),
