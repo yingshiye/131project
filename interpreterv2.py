@@ -55,17 +55,18 @@ class Interpreter(InterpreterBase):
         func = self.__get_func_by_name(call_ast.get("name"), len(passIn_arg)) # find the function node
         func_statements = func.get("statements") # the statement need to run
         func_arg = func.get("args")
-        # print(func_arg) # contiain the arg name
-        # print(passIn_arg) # the pass in argument value 
-        self.env.new_scope()
-        # put arguments into the function scope
+        self.env.new_scope_func()
         for arg1, arg2 in zip(func_arg, passIn_argV):
             var_name = arg1.get("name")
             var_value = arg2
             self.env.create(var_name, var_value)
+        # print(func_arg) # contiain the arg name
+        # print(passIn_arg) # the pass in argument value 
+
+        # put arguments into the function scope
         #run statement
         returnValue = self.__run_statements(func_statements)
-        self.env.notInScope()
+        self.env.notInScope_func()
         if returnValue is not None: 
             return returnValue
         else:
@@ -253,24 +254,38 @@ class Interpreter(InterpreterBase):
         
         if expr_ast.elem_type == InterpreterBase.NEG_NODE: # negative value
             pos_val = expr_ast.get("op1") #return list of value
-            if pos_val.elem_type != InterpreterBase.INT_NODE:
+            if pos_val.elem_type == InterpreterBase.VAR_NODE or pos_val.elem_type == InterpreterBase.NEG_NODE:
+                val_Value = self.__eval_expr(pos_val)
+                if val_Value.type() != Type.INT:
+                    super().error(
+                        ErrorType.TYPE_ERROR, f"neg_node only works for integer",
+                    )
+            elif pos_val.elem_type != InterpreterBase.INT_NODE:
                 super().error(
                     ErrorType.TYPE_ERROR, f"neg_node only works for integer",
-                )     
+                )
             # print(type(pos_val))
-            val_Value = self.__eval_expr(pos_val) # reutrn Value 
+            elif pos_val.elem_type == InterpreterBase.INT_NODE:
+                val_Value = self.__eval_expr(pos_val) # reutrn Value 
             val = val_Value.value() # return the abs value of neg 
             negval = 0 - val # becomse neg
             return Value(Type.INT, negval) #return Value
         
         if expr_ast.elem_type == InterpreterBase.NOT_NODE: # opposite value
             bol_val = expr_ast.get("op1")
-            bol_Value = self.__eval_expr(bol_val)
-            # print(type(bol_Value), "hi")
-            if bol_Value.value() == True:
-                return Value(Type.BOOL, False)
-            elif bol_Value.value() == False:
-                return Value(Type.BOOL, True)
+            if (bol_val.elem_type == InterpreterBase.BOOL_NODE or 
+                bol_val.elem_type == InterpreterBase.VAR_NODE or 
+                bol_val.elem_type == InterpreterBase.NOT_NODE):
+                    bol_Value = self.__eval_expr(bol_val)
+                    # print(type(bol_Value), "hi")
+                    if bol_Value.value() == True:
+                        return Value(Type.BOOL, False)
+                    elif bol_Value.value() == False:
+                        return Value(Type.BOOL, True)
+            else:
+                super().error(
+                    ErrorType.TYPE_ERROR, f"not_node only works for boolean",
+                )
             
 
     def __eval_op(self, arith_ast):
@@ -340,26 +355,18 @@ class Interpreter(InterpreterBase):
 
 
 
-test = """
-func g(){
-    print(x);
-}
+# test = """
+# func main() {
+#     var a;
+#     a = true;
+#     var b;
+#     b = !a;
+#     print(!(!b));
+# }
+# """
 
-func f(){
-    var x;
-    x = 4;
-    g();
-}
-func main() {
-    f();
-}
 
-/*
-ErrorType.NAME_ERROR: Variable x not found
-*/
-"""
-
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
 
 
