@@ -1,11 +1,10 @@
-from intbase import InterpreterBase
-
-
+from intbase import InterpreterBase 
 # Enumerated type for our different language data types
 class Type:
     INT = "int"
     BOOL = "bool"
     STRING = "string"
+    NIL = "nil"
 
 # Represents a value, which has a type and its value
 class Value:
@@ -21,19 +20,19 @@ class Value:
 
 
 def create_value(val):
-    if val == InterpreterBase.TRUE_DEF:
+    if val == InterpreterBase.TRUE_DEF: # if the value is true
         return Value(Type.BOOL, True)
-    elif val == InterpreterBase.FALSE_DEF:
+    elif val == InterpreterBase.FALSE_DEF: # the value is false
         return Value(Type.BOOL, False)
-    elif isinstance(val, str):
+    elif isinstance(val, str): # if the value type is string 
         return Value(Type.STRING, val)
-    elif isinstance(val, int):
+    elif isinstance(val, int): # if the value type if int
         return Value(Type.INT, val)
     else:
         raise ValueError("Unknown value type")
 
 
-def get_printable(val):
+def get_printable(val): # change everything into string 
     if val.type() == Type.INT:
         return str(val.value())
     if val.type() == Type.STRING:

@@ -1,3 +1,5 @@
+from intbase import InterpreterBase
+
 # The EnvironmentManager class keeps a mapping between each variable name (aka symbol)
 # in a brewin program and the Value object, which stores a type, and a value.
 class EnvironmentManager:
@@ -17,10 +19,19 @@ class EnvironmentManager:
         cur_func_env = self.environment[-1]
         for env in reversed(cur_func_env):
             if symbol in env:
-                env[symbol] = value
-                return True
-
+                if (self.checkType(env[symbol], value)):
+                    env[symbol] = value
+                    return True
+                return "type error"
         return False
+    
+    def checkType(self, obj1, obj2):
+        if obj1.type() == obj2.type():
+            return True
+        elif obj1.type() == "bool" and obj2.type() == "int": 
+            return True
+        else: 
+            return False
 
     # create a new symbol in the top-most environment, regardless of whether that symbol exists
     # in a lower environment
