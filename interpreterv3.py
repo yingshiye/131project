@@ -56,6 +56,7 @@ class Interpreter(InterpreterBase):
             )
         return candidate_funcs[num_params]
 
+
     def __run_statements(self, statements):
         self.env.push_block()
         for statement in statements:
@@ -118,9 +119,24 @@ class Interpreter(InterpreterBase):
         # and add the formal arguments to the activation record
         for arg_name, value in args.items():
           self.env.create(arg_name, value)
-        _, return_val = self.__run_statements(func_ast.get("statements"))
+        _, return_val = self.__run_statements(func_ast.get("statements")) #Value Object
         self.env.pop_func()
-        return return_val
+
+        func_return_type = func_ast.get("return_type") # string 
+        if func_return_type == return_val.type():
+            return return_val
+        
+        if func_return_type != "void" and return_val.type() == "nil":
+            return self.__default_value(func_return_type)
+        
+        if func_return_type != "void" and (func_return_type != return_val.type()):
+            super().error(
+                ErrorType.TYPE_ERROR, f"return type is not consistent"
+            )
+
+        
+
+        
 
     def __call_print(self, args):
         output = ""
@@ -354,10 +370,25 @@ class Interpreter(InterpreterBase):
             return Value(Type.NIL, None)
 
 # test = """
+# func bar() : int {
+#   return;  /* no return value specified - returns 0 */
+# }
+
+# func bletch() : bool {
+#   print("next line should be false");
+#   /* no explicit return; bletch must return default bool of false */
+# }
+
+# func a() : string {
+#   return 5;
+# }
+
 # func main() : void {
-#   var n : int; 
-#   n = "hi"; 
-#   print(n);
+#    var val: int;
+#    val = bar();
+#    print(val);  /* prints 0 */
+#    print(bletch()); /* prints false */
+#    print(a()); /* check */
 # }
 # """
 

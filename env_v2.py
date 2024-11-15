@@ -29,6 +29,11 @@ class EnvironmentManager:
         if obj1.type() == obj2.type():
             return True
         elif obj1.type() == "bool" and obj2.type() == "int": 
+            obj2.t = "bool"
+            if obj2.value() == 0: 
+                obj2.v = False
+            else:
+                obj2.v = True
             return True
         else: 
             return False
