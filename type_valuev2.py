@@ -6,6 +6,11 @@ class Type:
     BOOL = "bool"
     STRING = "string"
     NIL = "nil"
+    struct_list = {}
+
+    def find_struct(name):
+        if name in Type.struct_list:
+            return Type.struct_list[name]
 
 
 # Represents a value, which has a type and its value
@@ -46,5 +51,7 @@ def get_printable(val):
             return "true"
         return "false"
     if val.type() == Type.NIL:
+        return "nil"
+    if val.value() == Type.NIL:
         return "nil"
     return None

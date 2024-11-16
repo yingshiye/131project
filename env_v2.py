@@ -9,20 +9,35 @@ class EnvironmentManager:
     # returns a VariableDef object
     def get(self, symbol):
         cur_func_env = self.environment[-1]
-        for env in reversed(cur_func_env):
-            if symbol in env:
-                return env[symbol]
+        if "." not in symbol:
+            for env in reversed(cur_func_env):
+                if symbol in env:
+                    return env[symbol]  
 
+        elif "." in symbol: 
+            result = self.find_var_in_struct(symbol)
+            return result
+                
         return None
 
     def set(self, symbol, value):
         cur_func_env = self.environment[-1]
-        for env in reversed(cur_func_env):
-            if symbol in env:
-                if (self.checkType(env[symbol], value)):
-                    env[symbol] = value
-                    return True
-                return "type error"
+        if "." not in symbol:
+            for env in reversed(cur_func_env):
+                if symbol in env:
+                    if (self.checkType(env[symbol], value)):
+                        env[symbol] = value
+                        return True
+                    return "type error"
+        
+        elif "." in symbol: 
+            symbol_value = self.find_var_in_struct(symbol)
+            if (self.checkType(symbol_value, value)):
+                symbol_value.v = value.value()
+                return True
+            # print(type(value_O))
+            # print((type(value)))
+
         return False
     
     def checkType(self, obj1, obj2):
@@ -63,3 +78,17 @@ class EnvironmentManager:
     def pop_func(self):
         self.environment.pop()
 
+    def find_var_in_struct(self, symbol):
+        field_list = reversed(self.environment[-1])
+        while "." in symbol: 
+            var_name, symbol = symbol.split('.', 1)
+            # print(symbol)
+            for env in field_list:
+                if var_name in env:
+                    field_list = env
+        # return field_list
+        
+        if field_list is not None:
+            for i in field_list:
+                if symbol == i:
+                    return field_list[i] 

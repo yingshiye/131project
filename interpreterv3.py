@@ -33,6 +33,7 @@ class Interpreter(InterpreterBase):
     def run(self, program):
         ast = parse_program(program)
         self.__set_up_function_table(ast)
+        self.__set_up_struct_table(ast)
         self.env = EnvironmentManager()
         self.__call_func_aux("main", [])
 
@@ -55,7 +56,37 @@ class Interpreter(InterpreterBase):
                 f"Function {name} taking {num_params} params not found",
             )
         return candidate_funcs[num_params]
+    
+    def __set_up_struct_table(self, ast):
+        for struct in ast.get("structs"):
+            struct_name = struct.get("name")
+            struct_field = struct.get("fields")
+            if struct_name not in Type.struct_list:
+                Type.struct_list[struct_name] = {}
+            for field in struct_field:
+                field_name = field.get("name")
+                field_type = field.get("var_type")
+                # if (field_type != "int" and field_type != "bool" and field_type != "string"):
+                #     field_type = self.__get_struct_by_name(field_type)
+                Type.struct_list[struct_name][field_name] = field_type
+        # print("done")
 
+    def __get_struct_by_name(self, name):
+        if name not in Type.struct_list:
+            super().error(ErrorType.NAME_ERROR, f"Struct {name} not found")
+        return Type.find_struct(name)
+    
+    def __allocate_struct(self, ast):
+        type_name = ast.get("var_type")
+        struct = self.__get_struct_by_name(type_name)
+        # print(struct) # list of field
+        struct_v = Value(type_name, {})
+        for field in struct: 
+            field_type = struct[field] #field is the variable name, field_type is the type of the variable
+            field_list = struct_v.value()
+            field_list[field] = self.__default_value(field_type)
+        # print("done")
+        return struct_v
 
     def __run_statements(self, statements):
         self.env.push_block()
@@ -134,10 +165,6 @@ class Interpreter(InterpreterBase):
                 ErrorType.TYPE_ERROR, f"return type is not consistent"
             )
 
-        
-
-        
-
     def __call_print(self, args):
         output = ""
         for arg in args:
@@ -206,6 +233,8 @@ class Interpreter(InterpreterBase):
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
+        if expr_ast.elem_type == Interpreter.NEW_NODE:
+            return self.__allocate_struct(expr_ast)
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -312,7 +341,7 @@ class Interpreter(InterpreterBase):
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
         result = self.__eval_expr(cond_ast)
-        if result.type() != Type.BOOL:
+        if result.type() != Type.BOOL and result.type() != Type.INT:
             super().error(
                 ErrorType.TYPE_ERROR,
                 "Incompatible type for if condition",
@@ -338,7 +367,7 @@ class Interpreter(InterpreterBase):
         run_for = Interpreter.TRUE_VALUE
         while run_for.value():
             run_for = self.__eval_expr(cond_ast)  # check for-loop condition
-            if run_for.type() != Type.BOOL:
+            if run_for.type() != Type.BOOL and run_for.type() != Type.INT:
                 super().error(
                     ErrorType.TYPE_ERROR,
                     "Incompatible type for for condition",
@@ -367,30 +396,34 @@ class Interpreter(InterpreterBase):
         elif var_type == "bool": 
             return Value(Type.BOOL, False)
         else: 
-            return Value(Type.NIL, None)
+            return Value(var_type, Type.NIL)
+        
 
-# test = """
-# func bar() : int {
-#   return;  /* no return value specified - returns 0 */
-# }
+test = """
+struct foo {
+  i:int;
+}
 
-# func bletch() : bool {
-#   print("next line should be false");
-#   /* no explicit return; bletch must return default bool of false */
-# }
+struct bar {
+  f:foo;
+}
 
-# func a() : string {
-#   return 5;
-# }
+func main() : void {
+  var b : bar;
+  b = new bar;
+  b.f = new foo;
+  b.f.i = 10;
 
-# func main() : void {
-#    var val: int;
-#    val = bar();
-#    print(val);  /* prints 0 */
-#    print(bletch()); /* prints false */
-#    print(a()); /* check */
-# }
-# """
+  print(b.f.i);
+}
+/*
+*OUT*
+10
+*OUT*
+*/
 
-# a = Interpreter()
-# a.run(test)
+
+"""
+
+a = Interpreter()
+a.run(test)
