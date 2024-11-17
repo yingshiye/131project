@@ -11,6 +11,12 @@ class Type:
     def find_struct(name):
         if name in Type.struct_list:
             return Type.struct_list[name]
+        
+
+    def valid_type(input_type):
+        if input_type in [Type.INT, Type.BOOL, Type.STRING, Type.NIL] or input_type in Type.struct_list:
+            return True
+        return False
 
 
 # Represents a value, which has a type and its value
@@ -24,6 +30,7 @@ class Value:
 
     def type(self):
         return self.t
+
 
 
 def create_value(val):

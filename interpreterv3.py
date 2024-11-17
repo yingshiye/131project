@@ -64,8 +64,6 @@ class Interpreter(InterpreterBase):
         for struct in ast.get("structs"):
             struct_name = struct.get("name")
             struct_field = struct.get("fields")
-            if struct_name in Type.struct_list:
-                super().error(ErrorType.NAME_ERROR, f"duplicated struct")
             if struct_name not in Type.struct_list:
                 Type.struct_list[struct_name] = {}
             for field in struct_field:
@@ -398,8 +396,6 @@ class Interpreter(InterpreterBase):
         )
         self.op_to_lambda["struct"]["!="] = lambda x, y: Value(
             Type.BOOL, (
-                x.type() != "nil" or y.value() != "nil") and (
-                y.type() != "nil" or x.value() != "nil") and (
                 (x.type() != y.type() or x.value() != y.value()))
         )
 
@@ -468,21 +464,16 @@ class Interpreter(InterpreterBase):
         
 
 # test = """
-# struct Car {
-#     model: string;
-#     year: int;
+# struct Person {
+#     name : string;
+#     alive : bool;
+#     age: int; 
 # }
 
 # func main() : void {
-#     var car1: Car;
-#     var car2: Car;
-#     var car3: Car;
-
-#     car1 = new Car;
-#     car2 = new Car;
-#     car3 = car1;
-
-#     print(car2 != nil);
+#     var a: Person; 
+# 	a = nil;
+# 	print(a);
 # }
 # """
 
