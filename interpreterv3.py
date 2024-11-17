@@ -42,6 +42,9 @@ class Interpreter(InterpreterBase):
         for func_def in ast.get("functions"):
             func_name = func_def.get("name")
             num_params = len(func_def.get("args"))
+            # return_type = func_def.get("return_type")
+            # if Type.valid_type(return_type) == False and func_name != "main": 
+            #     super().error(ErrorType.TYPE_ERROR, f"invalid type")
             if func_name not in self.func_name_to_ast:
                 self.func_name_to_ast[func_name] = {}
             self.func_name_to_ast[func_name][num_params] = func_def
@@ -61,14 +64,19 @@ class Interpreter(InterpreterBase):
         for struct in ast.get("structs"):
             struct_name = struct.get("name")
             struct_field = struct.get("fields")
+            if struct_name in Type.struct_list:
+                super().error(ErrorType.NAME_ERROR, f"duplicated struct")
             if struct_name not in Type.struct_list:
                 Type.struct_list[struct_name] = {}
             for field in struct_field:
                 field_name = field.get("name")
                 field_type = field.get("var_type")
-                # if (field_type != "int" and field_type != "bool" and field_type != "string"):
-                #     field_type = self.__get_struct_by_name(field_type)
-                Type.struct_list[struct_name][field_name] = field_type
+                if Type.valid_type(field_type):
+                # # # if (field_type != "int" and field_type != "bool" and field_type != "string"):
+                # # #     field_type = self.__get_struct_by_name(field_type)
+                    Type.struct_list[struct_name][field_name] = field_type
+                else: 
+                    super().error(ErrorType.TYPE_ERROR, f"invalid type")
         # print("done")
 
     def __get_struct_by_name(self, name):
@@ -144,7 +152,7 @@ class Interpreter(InterpreterBase):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
             arg_type = formal_ast.get("var_type")
-            if (arg_type != result.type()):
+            if (arg_type != result.type() and (arg_type != "bool" and result.type() != "int")):
                 super().error(
                 ErrorType.TYPE_ERROR, f"inconsistent parameter and argument type"
                 )
@@ -205,11 +213,19 @@ class Interpreter(InterpreterBase):
             super().error(
                 ErrorType.TYPE_ERROR, f"type mismatch"
             )
+        if result == "struct error": 
+            super().error(
+                ErrorType.FAULT_ERROR, f"invalid file"
+            )
     
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         var_type = var_ast.get("var_type")
         var_value = self.__default_value(var_type)
+        if not Type.valid_type(var_type):
+            super().error(
+                ErrorType.TYPE_ERROR, f"not exist type"
+            )
         # print(var_value)
         if not self.env.create(var_name, var_value):
             super().error(
@@ -382,8 +398,8 @@ class Interpreter(InterpreterBase):
         )
         self.op_to_lambda["struct"]["!="] = lambda x, y: Value(
             Type.BOOL, (
-                x.type() == "nil" or y.value() == "nil") and (
-                y.type() == "nil" or x.value() == "nil") and (
+                x.type() != "nil" or y.value() != "nil") and (
+                y.type() != "nil" or x.value() != "nil") and (
                 (x.type() != y.type() or x.value() != y.value()))
         )
 
@@ -445,28 +461,29 @@ class Interpreter(InterpreterBase):
             return Value(Type.STRING, "")
         elif var_type == "bool": 
             return Value(Type.BOOL, False)
+        elif var_type == "nil":
+            return Value(Type.NIL, None)
         else: 
             return Value(var_type, Type.NIL)
         
 
 # test = """
+# struct Car {
+#     model: string;
+#     year: int;
+# }
+
 # func main() : void {
-#   var a: bool; 
-#   a = true;
-#   foo(a);
-#   foo(false);
+#     var car1: Car;
+#     var car2: Car;
+#     var car3: Car;
+
+#     car1 = new Car;
+#     car2 = new Car;
+#     car3 = car1;
+
+#     print(car2 != nil);
 # }
-
-# func foo(x:int) : void {
-#   print(x);
-# }
-
-# /*
-# *OUT*
-# ErrorType.TYPE_ERROR
-# *OUT*
-# */
-
 # """
 
 # a = Interpreter()

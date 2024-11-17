@@ -1,5 +1,5 @@
 from intbase import InterpreterBase
-
+from type_valuev2 import Type
 # The EnvironmentManager class keeps a mapping between each variable name (aka symbol)
 # in a brewin program and the Value object, which stores a type, and a value.
 class EnvironmentManager:
@@ -16,6 +16,10 @@ class EnvironmentManager:
 
         elif "." in symbol: 
             result = self.find_var_in_struct(symbol)
+            if result == "type error":
+                return "type error"
+            if result == "struct error":
+                return "struct error"
             return result
                 
         return None
@@ -32,6 +36,10 @@ class EnvironmentManager:
         
         elif "." in symbol: 
             symbol_value = self.find_var_in_struct(symbol)
+            if symbol_value == "type error":
+                return "type error"
+            if symbol_value == "struct error":
+                return "struct error"
             if (self.checkType(symbol_value, value)):
                 symbol_value.v = value.value()
                 return True
@@ -49,6 +57,7 @@ class EnvironmentManager:
                 obj2.v = False
             else:
                 obj2.v = True
+
             return True
         else: 
             return False
@@ -86,8 +95,14 @@ class EnvironmentManager:
             if fields[0] in env:
                 var = env[fields[0]] #find the variable in the environment
         
+        if var.type() not in Type.struct_list:
+            return "type error"
+        
         for field in fields[1:]:
-            var = var.value()[field]
+            if field in var.value():
+                var = var.value()[field]
+            else: 
+                return "struct error"
 
         return var 
 
