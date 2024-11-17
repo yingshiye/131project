@@ -79,16 +79,28 @@ class EnvironmentManager:
         self.environment.pop()
 
     def find_var_in_struct(self, symbol):
-        field_list = reversed(self.environment[-1])
-        while "." in symbol: 
-            var_name, symbol = symbol.split('.', 1)
-            # print(symbol)
-            for env in field_list:
-                if var_name in env:
-                    field_list = env
-        # return field_list
+        fields = symbol.split('.')
+        # print(field)
+
+        for env in reversed(self.environment[-1]):
+            if fields[0] in env:
+                var = env[fields[0]] #find the variable in the environment
         
-        if field_list is not None:
-            for i in field_list:
-                if symbol == i:
-                    return field_list[i] 
+        for field in fields[1:]:
+            var = var.value()[field]
+
+        return var 
+
+        # field_list = reversed(self.environment[-1])
+        # while "." in symbol: 
+        #     var_name, symbol = symbol.split('.', 1)
+        #     # print(symbol)
+        #     for env in field_list:
+        #         if var_name in env:
+        #             field_list = env
+        # # return field_list
+        
+        # if field_list is not None:
+        #     for i in field_list:
+        #         if symbol == i:
+        #             return field_list[i] 

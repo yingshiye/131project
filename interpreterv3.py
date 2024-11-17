@@ -165,6 +165,7 @@ class Interpreter(InterpreterBase):
                 ErrorType.TYPE_ERROR, f"return type is not consistent"
             )
 
+
     def __call_print(self, args):
         output = ""
         for arg in args:
@@ -246,11 +247,27 @@ class Interpreter(InterpreterBase):
                 ErrorType.TYPE_ERROR,
                 f"Incompatible types for {arith_ast.elem_type} operation",
             )
+
+        if arith_ast.elem_type in ["&&", "||", "==", "!="]:
+            if left_value_obj.type() == "bool" and right_value_obj.type() == "int":
+                if right_value_obj.value() != 0:
+                    right_value_obj = Value(Type.BOOL, True)
+                else:
+                    right_value_obj = Value(Type.BOOL, False)
+
+            if right_value_obj.type() == "bool" and left_value_obj.type() == "int":
+                if left_value_obj.value() != 0:
+                    left_value_obj = Value(Type.BOOL, True)
+                else:
+                    left_value_obj = Value(Type.BOOL, False)
+        
+            
         if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"Incompatible operator {arith_ast.elem_type} for type {left_value_obj.type()}",
             )
+
         f = self.op_to_lambda[left_value_obj.type()][arith_ast.elem_type]
         return f(left_value_obj, right_value_obj)
 
@@ -258,7 +275,16 @@ class Interpreter(InterpreterBase):
         # DOCUMENT: allow comparisons ==/!= of anything against anything
         if oper in ["==", "!="]:
             return True
-        return obj1.type() == obj2.type()
+
+        if (obj1 == None) or (obj2 == None): 
+            return False
+        
+        if (obj1.type() == "bool" or obj1.type() == "int") and (
+            obj2.type() == "bool" or obj2.type() == "int") and (
+            oper in ["&&", "||", "==", "!="]):
+            return True
+        
+        return obj1.type() == obj2.type() 
 
     def __eval_unary(self, arith_ast, t, f):
         value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -338,6 +364,7 @@ class Interpreter(InterpreterBase):
             Type.BOOL, x.type() != y.type() or x.value() != y.value()
         )
 
+
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
         result = self.__eval_expr(cond_ast)
@@ -400,29 +427,16 @@ class Interpreter(InterpreterBase):
         
 
 test = """
-struct foo {
-  i:int;
-}
-
-struct bar {
-  f:foo;
+struct dog {
+  name: string;
+  vaccinated: bool;  
 }
 
 func main() : void {
-  var b : bar;
-  b = new bar;
-  b.f = new foo;
-  b.f.i = 10;
+  var d: dog;    /* d is an object reference whose value is nil */
 
-  print(b.f.i);
+  print (d == nil);  /* prints true, because d was initialized to nil */
 }
-/*
-*OUT*
-10
-*OUT*
-*/
-
-
 """
 
 a = Interpreter()
