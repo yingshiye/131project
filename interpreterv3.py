@@ -240,6 +240,8 @@ class Interpreter(InterpreterBase):
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
         right_value_obj = self.__eval_expr(arith_ast.get("op2"))
+        final_type = left_value_obj.type()
+
         if not self.__compatible_types(
             arith_ast.elem_type, left_value_obj, right_value_obj
         ):
@@ -261,14 +263,16 @@ class Interpreter(InterpreterBase):
                 else:
                     left_value_obj = Value(Type.BOOL, False)
         
+        if (final_type not in ["int", "bool", "string"]): 
+            final_type = "struct"
             
-        if arith_ast.elem_type not in self.op_to_lambda[left_value_obj.type()]:
+        if arith_ast.elem_type not in self.op_to_lambda[final_type]:
             super().error(
                 ErrorType.TYPE_ERROR,
                 f"Incompatible operator {arith_ast.elem_type} for type {left_value_obj.type()}",
             )
 
-        f = self.op_to_lambda[left_value_obj.type()][arith_ast.elem_type]
+        f = self.op_to_lambda[final_type][arith_ast.elem_type]
         return f(left_value_obj, right_value_obj)
 
     def __compatible_types(self, oper, obj1, obj2):
@@ -364,6 +368,20 @@ class Interpreter(InterpreterBase):
             Type.BOOL, x.type() != y.type() or x.value() != y.value()
         )
 
+        self.op_to_lambda["struct"] = {}
+        self.op_to_lambda["struct"]["=="] = lambda x, y: Value(
+            Type.BOOL, (
+                x.type() == "nil" and y.value() == "nil") or (
+                y.type() == "nil" and x.value() == "nil") or (
+                x.type() == y.type() and x.value() == y.value())
+        )
+        self.op_to_lambda["struct"]["!="] = lambda x, y: Value(
+            Type.BOOL, (
+                x.type() == "nil" or y.value() == "nil") and (
+                y.type() == "nil" or x.value() == "nil") and (
+                (x.type() != y.type() or x.value() != y.value()))
+        )
+
 
     def __do_if(self, if_ast):
         cond_ast = if_ast.get("condition")
@@ -427,16 +445,23 @@ class Interpreter(InterpreterBase):
         
 
 test = """
-struct dog {
-  name: string;
-  vaccinated: bool;  
-}
-
 func main() : void {
-  var d: dog;    /* d is an object reference whose value is nil */
-
-  print (d == nil);  /* prints true, because d was initialized to nil */
+  var a: bool; 
+  a = true;
+  foo(a);
+  foo(false);
 }
+
+func foo(x:int) : void {
+  print(x);
+}
+
+/*
+*OUT*
+ErrorType.TYPE_ERROR
+*OUT*
+*/
+
 """
 
 a = Interpreter()
