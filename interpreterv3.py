@@ -143,6 +143,11 @@ class Interpreter(InterpreterBase):
         for formal_ast, actual_ast in zip(formal_args, actual_args):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
+            arg_type = formal_ast.get("var_type")
+            if (arg_type != result.type()):
+                super().error(
+                ErrorType.TYPE_ERROR, f"inconsistent parameter and argument type"
+                )
             args[arg_name] = result
 
         # then create the new activation record 
@@ -444,25 +449,25 @@ class Interpreter(InterpreterBase):
             return Value(var_type, Type.NIL)
         
 
-test = """
-func main() : void {
-  var a: bool; 
-  a = true;
-  foo(a);
-  foo(false);
-}
+# test = """
+# func main() : void {
+#   var a: bool; 
+#   a = true;
+#   foo(a);
+#   foo(false);
+# }
 
-func foo(x:int) : void {
-  print(x);
-}
+# func foo(x:int) : void {
+#   print(x);
+# }
 
-/*
-*OUT*
-ErrorType.TYPE_ERROR
-*OUT*
-*/
+# /*
+# *OUT*
+# ErrorType.TYPE_ERROR
+# *OUT*
+# */
 
-"""
+# """
 
-a = Interpreter()
-a.run(test)
+# a = Interpreter()
+# a.run(test)
