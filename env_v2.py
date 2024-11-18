@@ -52,13 +52,17 @@ class EnvironmentManager:
                 return "name error"
             if (self.checkType(symbol_value, value)):
                 if symbol_value.type() == "bool" and value.type() == "int":
-                    if symbol_value.value() != 0:
-                        symbol_value.v = Value(Type.BOOL, True)
+                    if value.value() != 0:
+                        value = Value(Type.BOOL, True)
+                        symbol_value.v = value.value()
                     else: 
-                        symbol_value.v = Value(Type.BOOL, False)
+                        value = Value(Type.BOOL, False)
+                        symbol_value.v = value.value()
                 else: 
                     symbol_value.v = value.value()
                 return True
+            else: 
+                return "type error"
             # print(type(value_O))
             # print((type(value)))
 
@@ -120,10 +124,12 @@ class EnvironmentManager:
             return "type error"
         
         for field in fields[1:]:
-            if var.type() == "nil" or var.value() == "nil": 
+            if var.type() == "nil" or var.value() == "nil" or var.value() == None: 
                 return "fault error"
-            if var.type() not in Type.struct_list:
+            if field != fields[-1] and var.type() not in Type.struct_list:
                 return "type error"
+            # if field == fields[-1] and field.type() not in ["string", "bool", "int"]:
+            #     return "type error"
             if field in var.value():
                 var = var.value()[field]
             else: 

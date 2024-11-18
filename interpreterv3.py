@@ -33,10 +33,12 @@ class Interpreter(InterpreterBase):
     # into an abstract syntax tree (ast)
     def run(self, program):
         ast = parse_program(program)
+        Type.struct_list = {}
         self.__set_up_struct_table(ast)
         self.__set_up_function_table(ast)
         self.env = EnvironmentManager()
         self.__call_func_aux("main", [])
+        
 
     def __set_up_function_table(self, ast):
         self.func_name_to_ast = {}
@@ -111,7 +113,7 @@ class Interpreter(InterpreterBase):
                 return (status, return_val)
 
         self.env.pop_block()
-        return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
+        return (ExecStatus.CONTINUE, Value("nothing", "none"))
 
     def __run_statement(self, statement):
         status = ExecStatus.CONTINUE
@@ -156,17 +158,17 @@ class Interpreter(InterpreterBase):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
             arg_type = formal_ast.get("var_type")
-            if (arg_type != result.type() and (arg_type != "bool" and result.type() != "int") and (
-                arg_type not in Type.struct_list or result.type() != "nil")):
+            if (arg_type != result.type()) and (arg_type != "bool" or result.type() != "int") and (
+                arg_type not in Type.struct_list or result.type() != "nil"):
                 super().error(
                 ErrorType.TYPE_ERROR, f"inconsistent parameter and argument type"
                 )
-            if (arg_type == "bool" and result.type() == "int"):
+            elif (arg_type == "bool" and result.type() == "int"):
                 if result.value() != 0:
                     result = Value(Type.BOOL, True)
                 else: 
                     result = Value(Type.BOOL, False)
-            if (arg_type in Type.struct_list and result.type() == "nil"):
+            elif (arg_type in Type.struct_list and result.type() == "nil"):
                 result = Value(arg_type, "nil")
             args[arg_name] = result
 
@@ -178,32 +180,51 @@ class Interpreter(InterpreterBase):
         _, return_val = self.__run_statements(func_ast.get("statements")) #Value Object
         self.env.pop_func()
 
-        func_return_type = func_ast.get("return_type") # string 
-        if func_return_type == return_val.type():
-            return return_val
-        
-        if func_return_type == "bool" and return_val.type() == "int":
-            if return_val.value() != 0: 
-                return_val = Value(Type.BOOL, True)
+        if not func_ast.get("name") == "main":
+            func_return_type = func_ast.get("return_type") # string 
+            if func_return_type == return_val.type():
                 return return_val
-            else: 
-                return_val = Value(Type.BOOL, False)
+            
+            elif func_return_type == "bool" and return_val.type() == "int":
+                if return_val.value() != 0: 
+                    return_val = Value(Type.BOOL, True)
+                    return return_val
+                else: 
+                    return_val = Value(Type.BOOL, False)
+                    return return_val
+                
+            elif func_return_type in Type.struct_list and (return_val.type() == "nil"):
                 return return_val
-        
-        if func_return_type != "void" and return_val.type() == "nil":
-            return self.__default_value(func_return_type)
-        
-        if func_return_type != "void" and (func_return_type != return_val.type()):
-            super().error(
-                ErrorType.TYPE_ERROR, f"return type is not consistent"
-            )
-    
-        if func_return_type == "void" and return_val.type() != "nil":
-            super().error(
-                ErrorType.TYPE_ERROR, f"return type is not consistent"
-            )
-    
+            
+            elif func_return_type != "void" and return_val.type() == "nothing":
+                return self.__default_value(func_return_type)
 
+            elif ((func_return_type in ["bool", "int", "string"]) and (return_val.type() == "nil")):
+                super().error(
+                    ErrorType.TYPE_ERROR, f"return type is not consistent1"
+                )
+        
+            
+            elif func_return_type != "void" and (func_return_type != return_val.type()):
+                super().error(
+                    ErrorType.TYPE_ERROR, f"return type is not consistent2"
+                )
+        
+            elif func_return_type == "void" and return_val.type() != "nothing":
+                super().error(
+                    ErrorType.TYPE_ERROR, f"return type is not consistent3"
+                )
+            # func_return_type = func_ast.get("return_type")
+            # if return_val.type() == "nil" and func_return_type in ["int", "bool", "string"]:
+            #         super().error(ErrorType.TYPE_ERROR, "Return type is not consistent")
+            # elif func_return_type == "bool" and return_val.type() == "int":
+            #     return Value(Type.BOOL, bool(return_val.value()))
+            # elif func_return_type in Type.struct_list and return_val.type() == "nil":
+            #     return return_val
+            # elif func_return_type != return_val.type():
+            #     super().error(ErrorType.TYPE_ERROR, f"inconsistent return type")
+
+            # return return_val
 
 
     def __call_print(self, args):
@@ -212,7 +233,6 @@ class Interpreter(InterpreterBase):
             result = self.__eval_expr(arg)  # result is a Value object
             output = output + get_printable(result)
         super().output(output)
-        return Interpreter.NIL_VALUE
 
     def __call_input(self, name, args):
         if args is not None and len(args) == 1:
@@ -297,6 +317,7 @@ class Interpreter(InterpreterBase):
             func_arg = expr_ast.get("args")
             func_node = self.__get_func_by_name(func_name, len(func_arg))
             if func_node.get("return_type") == "void":
+                self.__call_func(expr_ast)
                 super().error(ErrorType.TYPE_ERROR, f"void function called in expression") 
             else:
                 return self.__call_func(expr_ast)
@@ -312,6 +333,10 @@ class Interpreter(InterpreterBase):
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
         right_value_obj = self.__eval_expr(arith_ast.get("op2"))
+        if left_value_obj == None or right_value_obj == None:
+            super().error(
+                ErrorType.TYPE_ERROR,f"None Type",
+            )
         final_type = left_value_obj.type()
 
         if not self.__compatible_types(
@@ -357,7 +382,7 @@ class Interpreter(InterpreterBase):
                 f"inconsistent struct type",
             )
     
-        if oper in ["==", "!="]:
+        if oper in ["==", "!="] and obj1.type() == obj2.type() :
             return True
 
         if (obj1 == None) or (obj2 == None): 
@@ -471,7 +496,7 @@ class Interpreter(InterpreterBase):
         )
         self.op_to_lambda["struct"]["!="] = lambda x, y: Value(
             Type.BOOL, (
-                not (x is y or (x.type() == "nil" and y.value() == "nil") or (y.type() == "nil" and x.value() == "nil"))
+                not ((x is y) or (x.type() == "nil" and y.value() == "nil") or (y.type() == "nil" and x.value() == "nil"))
                 or (x.value() == y.value()))
         )
 
@@ -522,7 +547,7 @@ class Interpreter(InterpreterBase):
     def __do_return(self, return_ast):
         expr_ast = return_ast.get("expression")
         if expr_ast is None:
-            return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
+            return (ExecStatus.RETURN, Value("nothing", "none"))
         value_obj = copy.copy(self.__eval_expr(expr_ast))
         return (ExecStatus.RETURN, value_obj)
     
@@ -536,22 +561,21 @@ class Interpreter(InterpreterBase):
         elif var_type == "nil":
             return Value(Type.NIL, None)
         else: 
-            return Value(var_type, Type.NIL)
+            if var_type in Type.struct_list:
+                return Value(var_type, Type.NIL)
         
 
-test = """
-func main(): void {
-  if (5 == "5") { print("YES"); } else { print("NO"); }
-}
+# test = """
+# func print_hello() : void {
+#   print("Hello");
+# }
 
-/*
-*OUT*
-ErrorType.TYPE_ERROR
-*OUT*
-*/
-
-"""
+# func main() : void {
+#   var x: int;
+#   x = print_hello();  /* Should generate ErrorType.TYPE_ERROR */
+# }
+# """
 
 
-a = Interpreter()
-a.run(test)
+# a = Interpreter()
+# a.run(test)
