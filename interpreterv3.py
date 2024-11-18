@@ -1,3 +1,4 @@
+
 # document that we won't have a return inside the init/update of a for loop
 
 import copy
@@ -32,8 +33,8 @@ class Interpreter(InterpreterBase):
     # into an abstract syntax tree (ast)
     def run(self, program):
         ast = parse_program(program)
-        self.__set_up_function_table(ast)
         self.__set_up_struct_table(ast)
+        self.__set_up_function_table(ast)
         self.env = EnvironmentManager()
         self.__call_func_aux("main", [])
 
@@ -42,9 +43,14 @@ class Interpreter(InterpreterBase):
         for func_def in ast.get("functions"):
             func_name = func_def.get("name")
             num_params = len(func_def.get("args"))
-            # return_type = func_def.get("return_type")
-            # if Type.valid_type(return_type) == False and func_name != "main": 
-            #     super().error(ErrorType.TYPE_ERROR, f"invalid type")
+            params = func_def.get("args")
+            for args in params:
+                arg = args.get("var_type")
+                if not Type.valid_type(arg):
+                     super().error(ErrorType.TYPE_ERROR, f"invalid type parameter")
+            return_type = func_def.get("return_type")
+            if Type.valid_type(return_type) == False and return_type != "void":
+                super().error(ErrorType.TYPE_ERROR, f"invalid type")
             if func_name not in self.func_name_to_ast:
                 self.func_name_to_ast[func_name] = {}
             self.func_name_to_ast[func_name][num_params] = func_def
@@ -150,10 +156,18 @@ class Interpreter(InterpreterBase):
             result = copy.copy(self.__eval_expr(actual_ast))
             arg_name = formal_ast.get("name")
             arg_type = formal_ast.get("var_type")
-            if (arg_type != result.type() and (arg_type != "bool" and result.type() != "int")):
+            if (arg_type != result.type() and (arg_type != "bool" and result.type() != "int") and (
+                arg_type not in Type.struct_list or result.type() != "nil")):
                 super().error(
                 ErrorType.TYPE_ERROR, f"inconsistent parameter and argument type"
                 )
+            if (arg_type == "bool" and result.type() == "int"):
+                if result.value() != 0:
+                    result = Value(Type.BOOL, True)
+                else: 
+                    result = Value(Type.BOOL, False)
+            if (arg_type in Type.struct_list and result.type() == "nil"):
+                result = Value(arg_type, "nil")
             args[arg_name] = result
 
         # then create the new activation record 
@@ -168,6 +182,14 @@ class Interpreter(InterpreterBase):
         if func_return_type == return_val.type():
             return return_val
         
+        if func_return_type == "bool" and return_val.type() == "int":
+            if return_val.value() != 0: 
+                return_val = Value(Type.BOOL, True)
+                return return_val
+            else: 
+                return_val = Value(Type.BOOL, False)
+                return return_val
+        
         if func_return_type != "void" and return_val.type() == "nil":
             return self.__default_value(func_return_type)
         
@@ -175,6 +197,13 @@ class Interpreter(InterpreterBase):
             super().error(
                 ErrorType.TYPE_ERROR, f"return type is not consistent"
             )
+    
+        if func_return_type == "void" and return_val.type() != "nil":
+            super().error(
+                ErrorType.TYPE_ERROR, f"return type is not consistent"
+            )
+    
+
 
 
     def __call_print(self, args):
@@ -211,9 +240,13 @@ class Interpreter(InterpreterBase):
             super().error(
                 ErrorType.TYPE_ERROR, f"type mismatch"
             )
-        if result == "struct error": 
+        if result == "fault error": 
             super().error(
-                ErrorType.FAULT_ERROR, f"invalid file"
+                ErrorType.FAULT_ERROR, f"invaild nil"
+            )
+        if result == "name error":
+            super().error(
+                ErrorType.NAME_ERROR, f"invalid name"
             )
     
     def __var_def(self, var_ast):
@@ -244,9 +277,29 @@ class Interpreter(InterpreterBase):
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
+            if val == "type error":
+                super().error(
+                    ErrorType.TYPE_ERROR, f"type mismatch"
+                )
+            if val == "fault error": 
+                super().error(
+                    ErrorType.FAULT_ERROR, f"invaild nil"
+                )
+            if val == "name error":
+                super().error(
+                    ErrorType.NAME_ERROR, f"invalid name"
+                )
             return val
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
-            return self.__call_func(expr_ast)
+            func_name = expr_ast.get("name")
+            if func_name in ["inputi", "print", "inputs"]:
+                return self.__call_func(expr_ast)
+            func_arg = expr_ast.get("args")
+            func_node = self.__get_func_by_name(func_name, len(func_arg))
+            if func_node.get("return_type") == "void":
+                super().error(ErrorType.TYPE_ERROR, f"void function called in expression") 
+            else:
+                return self.__call_func(expr_ast)
         if expr_ast.elem_type in Interpreter.BIN_OPS:
             return self.__eval_op(expr_ast)
         if expr_ast.elem_type == Interpreter.NEG_NODE:
@@ -271,12 +324,14 @@ class Interpreter(InterpreterBase):
 
         if arith_ast.elem_type in ["&&", "||", "==", "!="]:
             if left_value_obj.type() == "bool" and right_value_obj.type() == "int":
+                final_type = Type.BOOL
                 if right_value_obj.value() != 0:
                     right_value_obj = Value(Type.BOOL, True)
                 else:
                     right_value_obj = Value(Type.BOOL, False)
 
             if right_value_obj.type() == "bool" and left_value_obj.type() == "int":
+                final_type = Type.BOOL
                 if left_value_obj.value() != 0:
                     left_value_obj = Value(Type.BOOL, True)
                 else:
@@ -296,6 +351,12 @@ class Interpreter(InterpreterBase):
 
     def __compatible_types(self, oper, obj1, obj2):
         # DOCUMENT: allow comparisons ==/!= of anything against anything
+        if obj1.type() in Type.struct_list and obj2.type() in Type.struct_list and obj1.type() != obj2.type():
+            super().error(
+                ErrorType.TYPE_ERROR,
+                f"inconsistent struct type",
+            )
+    
         if oper in ["==", "!="]:
             return True
 
@@ -307,10 +368,19 @@ class Interpreter(InterpreterBase):
             oper in ["&&", "||", "==", "!="]):
             return True
         
+        if obj1.type() in Type.struct_list and obj2.type() == "nil":
+            return True
+    
+        
         return obj1.type() == obj2.type() 
 
     def __eval_unary(self, arith_ast, t, f):
         value_obj = self.__eval_expr(arith_ast.get("op1"))
+        if t == "bool" and value_obj.type() == "int":
+            if value_obj.value() != 0:
+                value_obj = Value(Type.BOOL, True)
+            else:
+                value_obj = Value(Type.BOOL, False)
         if value_obj.type() != t:
             super().error(
                 ErrorType.TYPE_ERROR,
@@ -352,6 +422,12 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.INT][">="] = lambda x, y: Value(
             Type.BOOL, x.value() >= y.value()
         )
+        self.op_to_lambda[Type.INT]["&&"] = lambda x, y: Value(
+            Type.BOOL, (x.value() != 0) and (y.value() != 0)
+        )
+        self.op_to_lambda[Type.INT]["||"] = lambda x, y: Value(
+            Type.BOOL, (x.value() != 0) or (y.value() != 0)
+        )
         #  set up operations on strings
         self.op_to_lambda[Type.STRING] = {}
         self.op_to_lambda[Type.STRING]["+"] = lambda x, y: Value(
@@ -390,13 +466,13 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda["struct"] = {}
         self.op_to_lambda["struct"]["=="] = lambda x, y: Value(
             Type.BOOL, (
-                x.type() == "nil" and y.value() == "nil") or (
-                y.type() == "nil" and x.value() == "nil") or (
-                x.type() == y.type() and x.value() == y.value())
+                (x is y) or (x.type() == "nil" and y.value() == "nil") or (y.type() == "nil" and x.value() == "nil")
+                or (x.value() == y.value()))
         )
         self.op_to_lambda["struct"]["!="] = lambda x, y: Value(
             Type.BOOL, (
-                (x.type() != y.type() or x.value() != y.value()))
+                not (x is y or (x.type() == "nil" and y.value() == "nil") or (y.type() == "nil" and x.value() == "nil"))
+                or (x.value() == y.value()))
         )
 
 
@@ -463,19 +539,19 @@ class Interpreter(InterpreterBase):
             return Value(var_type, Type.NIL)
         
 
-# test = """
-# struct Person {
-#     name : string;
-#     alive : bool;
-#     age: int; 
-# }
+test = """
+func main(): void {
+  if (5 == "5") { print("YES"); } else { print("NO"); }
+}
 
-# func main() : void {
-#     var a: Person; 
-# 	a = nil;
-# 	print(a);
-# }
-# """
+/*
+*OUT*
+ErrorType.TYPE_ERROR
+*OUT*
+*/
 
-# a = Interpreter()
-# a.run(test)
+"""
+
+
+a = Interpreter()
+a.run(test)

@@ -1,5 +1,5 @@
 from intbase import InterpreterBase
-from type_valuev2 import Type
+from type_valuev2 import Type, Value
 # The EnvironmentManager class keeps a mapping between each variable name (aka symbol)
 # in a brewin program and the Value object, which stores a type, and a value.
 class EnvironmentManager:
@@ -18,8 +18,10 @@ class EnvironmentManager:
             result = self.find_var_in_struct(symbol)
             if result == "type error":
                 return "type error"
-            if result == "struct error":
-                return "struct error"
+            if result == "fault error":
+                return "fault error"
+            if result == "name error": 
+                return "name error"
             return result
                 
         return None
@@ -30,7 +32,13 @@ class EnvironmentManager:
             for env in reversed(cur_func_env):
                 if symbol in env:
                     if (self.checkType(env[symbol], value)):
-                        env[symbol] = value
+                        if env[symbol].type() == "bool" and value.type() == "int":
+                            if value.value() != 0:
+                                env[symbol] = Value(Type.BOOL, True)
+                            else: 
+                                env[symbol] = Value(Type.BOOL, False)
+                        else: 
+                            env[symbol] = value
                         return True
                     return "type error"
         
@@ -38,10 +46,18 @@ class EnvironmentManager:
             symbol_value = self.find_var_in_struct(symbol)
             if symbol_value == "type error":
                 return "type error"
-            if symbol_value == "struct error":
-                return "struct error"
+            if symbol_value == "fault error":
+                return "fault error"
+            if symbol_value == "name error": 
+                return "name error"
             if (self.checkType(symbol_value, value)):
-                symbol_value.v = value.value()
+                if symbol_value.type() == "bool" and value.type() == "int":
+                    if symbol_value.value() != 0:
+                        symbol_value.v = Value(Type.BOOL, True)
+                    else: 
+                        symbol_value.v = Value(Type.BOOL, False)
+                else: 
+                    symbol_value.v = value.value()
                 return True
             # print(type(value_O))
             # print((type(value)))
@@ -52,12 +68,10 @@ class EnvironmentManager:
         if obj1.type() == obj2.type():
             return True
         elif obj1.type() == "bool" and obj2.type() == "int": 
-            obj2.t = "bool"
-            if obj2.value() == 0: 
-                obj2.v = False
-            else:
-                obj2.v = True
-
+            return True
+        elif (obj1.type() in Type.struct_list and obj2.type() == "nil") or (
+            obj1.type() == "nil" and obj2.type() in Type.struct_list
+        ):
             return True
         else: 
             return False
@@ -68,6 +82,8 @@ class EnvironmentManager:
         cur_func_env = self.environment[-1]
         if symbol in cur_func_env[-1]:   # symbol already defined in current scope
             return False
+        if not Type.valid_type(value.type()): 
+            return "type error"
         cur_func_env[-1][symbol] = value
         return True
 
@@ -89,20 +105,29 @@ class EnvironmentManager:
 
     def find_var_in_struct(self, symbol):
         fields = symbol.split('.')
+        var = None
         # print(field)
 
         for env in reversed(self.environment[-1]):
             if fields[0] in env:
                 var = env[fields[0]] #find the variable in the environment
         
+        if var is None: 
+            return "name error"
+        if var.type() == "nil" or var.value() == "nil": 
+            return "fault error"
         if var.type() not in Type.struct_list:
             return "type error"
         
         for field in fields[1:]:
+            if var.type() == "nil" or var.value() == "nil": 
+                return "fault error"
+            if var.type() not in Type.struct_list:
+                return "type error"
             if field in var.value():
                 var = var.value()[field]
             else: 
-                return "struct error"
+                return "name error"
 
         return var 
 
