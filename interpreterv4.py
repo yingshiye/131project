@@ -7,7 +7,7 @@ from brewparse import parse_program
 from env_v4 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
 from type_valuev4 import Type, Value, create_value, get_printable
-
+from element import Element
 
 class ExecStatus(Enum):
     CONTINUE = 1
@@ -151,6 +151,14 @@ class Interpreter(InterpreterBase):
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         value_obj = assign_ast.get("expression")
+        
+        # if value_obj.elem_type in Interpreter.BIN_OPS: 
+        #     op1 = value_obj.get("op1")
+        #     if op1.elem_type == InterpreterBase.VAR_NODE:
+        #         op1v = self.env.get(op1.get("name"))
+        #         op1 = op1v
+        #     if value_obj.get("op2").elem_type == InterpreterBase.VAR_NODE:
+        #         op2v = self.env.get(value_obj.get("op2").get("name"))
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -177,8 +185,14 @@ class Interpreter(InterpreterBase):
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
+            
+            if isinstance(val, Element):
+                val_value = self.__eval_expr(val)
+                self.env.set(var_name, val_value)
+                return val_value
+            return val
 
-            return self.__eval_expr(val)
+            # return self.__eval_expr(val)
         
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast)
@@ -190,6 +204,9 @@ class Interpreter(InterpreterBase):
                 last_op1 = op1
                 op1 = op1.get("op1")
                 op2 = last_op1.get("op2")
+            
+            op1 = self.__eval_expr(op1)
+            op2 = self.__eval_expr(op2)
 
             op1_result = self.__eval_expr(op1)
             if expr_ast.elem_type == "&&" and op1_result.value() == False: 
@@ -239,14 +256,6 @@ class Interpreter(InterpreterBase):
                     self.env.pop_block()
         
         return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
-
-    
-    def __do_raise(self, arith_est):
-        exception_node = arith_est.get("exception_type")
-        exception_type = self.__eval_expr(exception_node) #string
-
-        raise Exception(exception_type.value())
-
 
 
     def __eval_op(self, arith_ast):
@@ -400,23 +409,25 @@ class Interpreter(InterpreterBase):
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
         value_obj = copy.copy(self.__eval_expr(expr_ast))
         return (ExecStatus.RETURN, value_obj)
+    
+    def __do_raise(self, arith_est):
+        exception_node = arith_est.get("exception_type")
+        exception_type = self.__eval_expr(exception_node) #string
+
+        raise Exception(exception_type.value())
 
 
-# test = """
-# func functionThatRaises() {
-#   raise "some_exception";  /* Exception occurs here when func is called */
-#   return 0;
-# }
-
-# func main() {
-#   var result;
-#   result = functionThatRaises();
-#   print("Assigned result!");
-#   /* Exception will occur when result is evaluated */
-#   print(result, " was what we got!");
-# }
-# """
 
 
-# a = Interpreter(); 
-# a.run(test)
+test = """
+func main() {
+    var x;
+    x = 0;
+    x = x + 1;
+    print(x);
+}
+"""
+
+
+a = Interpreter(); 
+a.run(test)
