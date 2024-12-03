@@ -84,6 +84,8 @@ class Interpreter(InterpreterBase):
             status, return_val = self.__do_if(statement)
         elif statement.elem_type == Interpreter.FOR_NODE:
             status, return_val = self.__do_for(statement)
+        elif statement.elem_type == Interpreter.TRY_NODE:
+            status, return_val = self.__eval_try(statement)
 
         return (status, return_val)
     
@@ -178,15 +180,20 @@ class Interpreter(InterpreterBase):
             return self.__call_func(expr_ast)
         
         if expr_ast.elem_type in Interpreter.BIN_OPS:
-            result = expr_ast.get("op1")
-            while result.elem_type in Interpreter.BIN_OPS:
-                result = result.get("op1")
+            op1 = expr_ast.get("op1")
+            op2 = expr_ast.get("op2")
+            while op1.elem_type in Interpreter.BIN_OPS:
+                last_op1 = op1
+                op1 = op1.get("op1")
+                op2 = last_op1.get("op2")
 
-            op1_result = self.__eval_expr(result)
+            op1_result = self.__eval_expr(op1)
             if expr_ast.elem_type == "&&" and op1_result.value() == False: 
                 return Value(Type.BOOL, False)
-            if expr_ast.elem_type == "||" and op1_result.value() == True:
+            elif expr_ast.elem_type == "||" and op1_result.value() == True:
                 return Value(Type.BOOL, True)
+            else: 
+                return self.__eval_expr(op2)
 
             # if expr_ast.get("op1").elem_type not in Interpreter.BIN_OPS:
                 
@@ -200,6 +207,10 @@ class Interpreter(InterpreterBase):
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
+
+    def __eval_try(self, arith_est):
+        try_statements = arith_est.get("statements")
+        catchers = arith_est.get("catchers") # catchers node 
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -355,31 +366,39 @@ class Interpreter(InterpreterBase):
 
 
 test = """
-func t() {
- print("t");
- return true;
-}
-
-func f() {
- print("f");
- return false;
+func foo() {
+  try {
+    raise "z";
+  }
+  catch "x" {
+    print("x");
+  }
+  catch "y" {
+    print("y");
+  }
+  catch "z" {
+    print("z");
+    raise "a";
+  }
+  print("q");
 }
 
 func main() {
-  print((t() || f()) || t());
-  print("---");
-  print(f() && t());
+  try {
+    foo();
+    print("b");
+  }
+  catch "a" {
+    print("a");
+  }
 }
 
 /*
-*OUT*
-t
-true
----
-f
-false
-*OUT*
+z
+a
 */
+
+
 
 """
 
