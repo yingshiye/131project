@@ -176,8 +176,26 @@ class Interpreter(InterpreterBase):
             return val
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast)
+        
         if expr_ast.elem_type in Interpreter.BIN_OPS:
-            return self.__eval_op(expr_ast)
+            result = expr_ast.get("op1")
+            while result.elem_type in Interpreter.BIN_OPS:
+                result = result.get("op1")
+
+            op1_result = self.__eval_expr(result)
+            if expr_ast.elem_type == "&&" and op1_result.value() == False: 
+                return Value(Type.BOOL, False)
+            if expr_ast.elem_type == "||" and op1_result.value() == True:
+                return Value(Type.BOOL, True)
+
+            # if expr_ast.get("op1").elem_type not in Interpreter.BIN_OPS:
+                
+            #     if expr_ast.elem_type == "&&" and result.value() == False: 
+            #         return Value(Type.BOOL, False)
+            #     elif expr_ast.elem_type == "||" and result.value() == True: 
+            #         return Value(Type.BOOL, True)
+            # else:
+            #     return self.__eval_op(expr_ast)
         if expr_ast.elem_type == Interpreter.NEG_NODE:
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
@@ -334,3 +352,37 @@ class Interpreter(InterpreterBase):
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
         value_obj = copy.copy(self.__eval_expr(expr_ast))
         return (ExecStatus.RETURN, value_obj)
+
+
+test = """
+func t() {
+ print("t");
+ return true;
+}
+
+func f() {
+ print("f");
+ return false;
+}
+
+func main() {
+  print((t() || f()) || t());
+  print("---");
+  print(f() && t());
+}
+
+/*
+*OUT*
+t
+true
+---
+f
+false
+*OUT*
+*/
+
+"""
+
+
+a = Interpreter(); 
+a.run(test)
