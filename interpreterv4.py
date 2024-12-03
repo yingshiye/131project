@@ -86,6 +86,8 @@ class Interpreter(InterpreterBase):
             status, return_val = self.__do_for(statement)
         elif statement.elem_type == Interpreter.TRY_NODE:
             status, return_val = self.__eval_try(statement)
+        elif statement.elem_type == Interpreter.RAISE_NODE:
+            self.__do_raise(statement)
 
         return (status, return_val)
     
@@ -148,7 +150,7 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-        value_obj = self.__eval_expr(assign_ast.get("expression"))
+        value_obj = assign_ast.get("expression")
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
@@ -175,7 +177,9 @@ class Interpreter(InterpreterBase):
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
-            return val
+
+            return self.__eval_expr(val)
+        
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast)
         
@@ -211,6 +215,39 @@ class Interpreter(InterpreterBase):
     def __eval_try(self, arith_est):
         try_statements = arith_est.get("statements")
         catchers = arith_est.get("catchers") # catchers node 
+        # for statement in try_statements: 
+        #     if statement.elem_type == Interpreter.RAISE_NODE:
+        #         exception_node = statement.get("exception_type")
+        #         exception = self.__eval_expr(exception_node)
+        #         for catch in catchers: 
+        #             if catch.get("exception_type") == exception.value():
+        #                 self.__run_statements(catch.get("statements"))
+        #                 return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
+                        
+        #     else: 
+        #         self.__run_statement(statement)
+        # return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
+
+        try:
+            self.__run_statements(try_statements)
+        except Exception as e:
+            exception_type = str(e)
+            for catch in catchers: 
+                if catch.get("exception_type") == exception_type:
+                    self.env.push_block()
+                    self.__run_statements(catch.get("statements"))
+                    self.env.pop_block()
+        
+        return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
+
+    
+    def __do_raise(self, arith_est):
+        exception_node = arith_est.get("exception_type")
+        exception_type = self.__eval_expr(exception_node) #string
+
+        raise Exception(exception_type.value())
+
+
 
     def __eval_op(self, arith_ast):
         left_value_obj = self.__eval_expr(arith_ast.get("op1"))
@@ -365,43 +402,21 @@ class Interpreter(InterpreterBase):
         return (ExecStatus.RETURN, value_obj)
 
 
-test = """
-func foo() {
-  try {
-    raise "z";
-  }
-  catch "x" {
-    print("x");
-  }
-  catch "y" {
-    print("y");
-  }
-  catch "z" {
-    print("z");
-    raise "a";
-  }
-  print("q");
-}
+# test = """
+# func functionThatRaises() {
+#   raise "some_exception";  /* Exception occurs here when func is called */
+#   return 0;
+# }
 
-func main() {
-  try {
-    foo();
-    print("b");
-  }
-  catch "a" {
-    print("a");
-  }
-}
-
-/*
-z
-a
-*/
+# func main() {
+#   var result;
+#   result = functionThatRaises();
+#   print("Assigned result!");
+#   /* Exception will occur when result is evaluated */
+#   print(result, " was what we got!");
+# }
+# """
 
 
-
-"""
-
-
-a = Interpreter(); 
-a.run(test)
+# a = Interpreter(); 
+# a.run(test)
