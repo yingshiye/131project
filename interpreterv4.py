@@ -7,7 +7,7 @@ from brewparse import parse_program
 from env_v4 import EnvironmentManager
 from intbase import InterpreterBase, ErrorType
 from type_valuev4 import Type, Value, create_value, get_printable
-from element import Element
+
 
 class ExecStatus(Enum):
     CONTINUE = 1
@@ -151,19 +151,11 @@ class Interpreter(InterpreterBase):
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
         value_obj = assign_ast.get("expression")
-        
-        # if value_obj.elem_type in Interpreter.BIN_OPS: 
-        #     op1 = value_obj.get("op1")
-        #     if op1.elem_type == InterpreterBase.VAR_NODE:
-        #         op1v = self.env.get(op1.get("name"))
-        #         op1 = op1v
-        #     if value_obj.get("op2").elem_type == InterpreterBase.VAR_NODE:
-        #         op2v = self.env.get(value_obj.get("op2").get("name"))
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-    
+
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -172,6 +164,8 @@ class Interpreter(InterpreterBase):
             )
 
     def __eval_expr(self, expr_ast):
+        if isinstance(expr_ast, Value):
+            return expr_ast
         if expr_ast.elem_type == InterpreterBase.NIL_NODE:
             return Interpreter.NIL_VALUE
         if expr_ast.elem_type == InterpreterBase.INT_NODE:
@@ -185,14 +179,8 @@ class Interpreter(InterpreterBase):
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
-            
-            if isinstance(val, Element):
-                val_value = self.__eval_expr(val)
-                self.env.set(var_name, val_value)
-                return val_value
-            return val
 
-            # return self.__eval_expr(val)
+            return self.__eval_expr(val)
         
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
             return self.__call_func(expr_ast)
@@ -204,9 +192,6 @@ class Interpreter(InterpreterBase):
                 last_op1 = op1
                 op1 = op1.get("op1")
                 op2 = last_op1.get("op2")
-            
-            op1 = self.__eval_expr(op1)
-            op2 = self.__eval_expr(op2)
 
             op1_result = self.__eval_expr(op1)
             if expr_ast.elem_type == "&&" and op1_result.value() == False: 
@@ -254,6 +239,8 @@ class Interpreter(InterpreterBase):
                     self.env.push_block()
                     self.__run_statements(catch.get("statements"))
                     self.env.pop_block()
+                    return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
+            raise
         
         return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
 
@@ -290,6 +277,13 @@ class Interpreter(InterpreterBase):
                 f"Incompatible type for {arith_ast.elem_type} operation",
             )
         return Value(t, f(value_obj.value()))
+    
+    def __division(self, x, y):
+        if y.value() == 0:
+            raise Exception("div0")
+        else: 
+            return Value(x.type(), x.value() // y.value())
+
 
     def __setup_ops(self):
         self.op_to_lambda = {}
@@ -304,9 +298,9 @@ class Interpreter(InterpreterBase):
         self.op_to_lambda[Type.INT]["*"] = lambda x, y: Value(
             x.type(), x.value() * y.value()
         )
-        self.op_to_lambda[Type.INT]["/"] = lambda x, y: Value(
-            x.type(), x.value() // y.value()
-        )
+
+        self.op_to_lambda[Type.INT]["/"] = lambda x, y: self.__division(x, y)
+
         self.op_to_lambda[Type.INT]["=="] = lambda x, y: Value(
             Type.BOOL, x.type() == y.type() and x.value() == y.value()
         )
@@ -409,25 +403,49 @@ class Interpreter(InterpreterBase):
             return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
         value_obj = copy.copy(self.__eval_expr(expr_ast))
         return (ExecStatus.RETURN, value_obj)
-    
+
     def __do_raise(self, arith_est):
         exception_node = arith_est.get("exception_type")
         exception_type = self.__eval_expr(exception_node) #string
 
         raise Exception(exception_type.value())
 
-
-
-
 test = """
+func divide(a, b) {
+  return a / b;
+}
+
 func main() {
-    var x;
-    x = 0;
-    x = x + 1;
-    print(x);
+  try {
+    var result;
+    result = divide(10, 0);  /* evaluation deferred due to laziness */
+    print("Result: ", result); /* evaluation occurs here */
+  }
+  catch "div0" {
+    print("Caught division by zero!");
+  }
 }
 """
 
+# func f() {
+#     print("fuck");
+#     return 3;
+# }
+
+# func main() {
+#     var x;
+#     x = 1;
+#     var y; 
+#     y = 6;
+#     x = y + 1;
+#     y = 0;
+#     print(y);
+#     print(x);
+# }
+# /*
+# 0
+# 7
+# */
 
 a = Interpreter(); 
 a.run(test)
