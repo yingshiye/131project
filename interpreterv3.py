@@ -555,14 +555,36 @@ class Interpreter(InterpreterBase):
         
 
 test = """
-func print_hello() : void {
-  print("Hello");
+struct s {
+    i: int;
 }
 
-func main() : void {
-  var x: int;
-  x = print_hello();  /* Should generate ErrorType.TYPE_ERROR */
+func main(): void {
+    var a: s;
+    a = new s;
+    a.i = 3;
+    if (true) {
+        print(a.i);
+        var a: s;
+        print(a == nil);
+        a = new s;
+        a.i = 5;
+        print(a.i);
+        a = nil;
+        print(a == nil);
+    }
+    print(a.i);
 }
+
+/*
+*OUT*
+3
+true
+5
+true
+3
+*OUT*
+*/
 """
 
 

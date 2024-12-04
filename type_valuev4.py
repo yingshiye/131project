@@ -7,6 +7,7 @@ class Type:
     BOOL = "bool"
     STRING = "string"
     NIL = "nil"
+    UNKNOWN = "unknown"
 
 
 # Represents a value, which has a type and its value
@@ -14,12 +15,21 @@ class Value:
     def __init__(self, type, value=None):
         self.t = type
         self.v = value
+        self.isEvaluated = False
+        self.scope = None
 
     def value(self):
         return self.v
 
     def type(self):
         return self.t
+    
+    def setScope(self, scope): #for lazy only 
+        self.scope = scope
+    
+    def changeValue(self, value, type): 
+        self.v = value
+        self.type = type
 
 
 def create_value(val):
@@ -47,3 +57,4 @@ def get_printable(val):
             return "true"
         return "false"
     return None
+

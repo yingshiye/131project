@@ -150,12 +150,37 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-        value_obj = assign_ast.get("expression")
+        value_obj = self.__store_var(assign_ast.get("expression"))
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
+    
+    def __store_var(self, value_ast):
+        if value_ast.elem_type in {
+                InterpreterBase.NIL_NODE, InterpreterBase.INT_NODE, 
+                InterpreterBase.STRING_NODE, InterpreterBase.BOOL_NODE,
+                InterpreterBase.FCALL_NODE
+                }:
+            return value_ast
+        
+        if value_ast.elem_type == InterpreterBase.VAR_NODE:
+            var_name = value_ast.get("name")
+            val = self.env.get(var_name)
+            if isinstance(val, Value):
+                return val
+            else:
+                return self.__store_var(val)
+        
+        if value_ast.elem_type in Interpreter.BIN_OPS:
+            return self.__eval_op(value_ast)
 
+        if value_ast.elem_type == Interpreter.NEG_NODE:
+            return self.__eval_unary(value_ast, Type.INT, lambda x: -1 * x) # must be int
+        
+        if value_ast.elem_type == Interpreter.NOT_NODE:
+            return self.__eval_unary(value_ast, Type.BOOL, lambda x: not x) # must be bool 
+    
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -180,6 +205,10 @@ class Interpreter(InterpreterBase):
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
 
+            # var.v == unknown
+            #     get value scope, push scope into env, evalute, pop scope, result change value and copy current scope
+            # return val 
+
             return self.__eval_expr(val)
         
         if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
@@ -198,17 +227,10 @@ class Interpreter(InterpreterBase):
                 return Value(Type.BOOL, False)
             elif expr_ast.elem_type == "||" and op1_result.value() == True:
                 return Value(Type.BOOL, True)
-            else: 
+            elif expr_ast.elem_type in {"||", "&&"}:
                 return self.__eval_expr(op2)
-
-            # if expr_ast.get("op1").elem_type not in Interpreter.BIN_OPS:
-                
-            #     if expr_ast.elem_type == "&&" and result.value() == False: 
-            #         return Value(Type.BOOL, False)
-            #     elif expr_ast.elem_type == "||" and result.value() == True: 
-            #         return Value(Type.BOOL, True)
-            # else:
-            #     return self.__eval_op(expr_ast)
+            
+            return self.__eval_op(expr_ast)
         if expr_ast.elem_type == Interpreter.NEG_NODE:
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
@@ -217,6 +239,26 @@ class Interpreter(InterpreterBase):
     def __eval_try(self, arith_est):
         try_statements = arith_est.get("statements")
         catchers = arith_est.get("catchers") # catchers node 
+        len_func = len(self.env.environment)
+        len_block = len(self.env.environment[-1])
+
+        try:
+            self.__run_statements(try_statements)
+        except Exception as e:
+            while len_func != len(self.env.environment):
+                self.env.pop_func()
+            while len_block != len(self.env.environment[-1]):
+                self.env.pop_block()
+            exception_type = str(e)
+            for catch in catchers: 
+                if catch.get("exception_type") == exception_type:
+                    self.env.push_block()
+                    self.__run_statements(catch.get("statements"))
+                    self.env.pop_block()
+                    return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
+        # raise e 
+        return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
+    
         # for statement in try_statements: 
         #     if statement.elem_type == Interpreter.RAISE_NODE:
         #         exception_node = statement.get("exception_type")
@@ -228,21 +270,7 @@ class Interpreter(InterpreterBase):
                         
         #     else: 
         #         self.__run_statement(statement)
-        # return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)
-
-        try:
-            self.__run_statements(try_statements)
-        except Exception as e:
-            exception_type = str(e)
-            for catch in catchers: 
-                if catch.get("exception_type") == exception_type:
-                    self.env.push_block()
-                    self.__run_statements(catch.get("statements"))
-                    self.env.pop_block()
-                    return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
-            raise
-        
-        return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
+        # return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)       
 
 
     def __eval_op(self, arith_ast):
@@ -283,7 +311,6 @@ class Interpreter(InterpreterBase):
             raise Exception("div0")
         else: 
             return Value(x.type(), x.value() // y.value())
-
 
     def __setup_ops(self):
         self.op_to_lambda = {}
@@ -406,46 +433,45 @@ class Interpreter(InterpreterBase):
 
     def __do_raise(self, arith_est):
         exception_node = arith_est.get("exception_type")
-        exception_type = self.__eval_expr(exception_node) #string
+        exception_type = self.__eval_expr(exception_node) #has to be string
+
+        if exception_type.t != Type.STRING:
+            super().error(ErrorType.TYPE_ERROR, "exception type must be string")
 
         raise Exception(exception_type.value())
 
-test = """
-func divide(a, b) {
-  return a / b;
+test ="""
+func funcA() {
+  print("funcA is running");
+  raise "exceptionA";
+}
+
+func funcB(x) {
+  print("funcB is running");
+  try {
+    var result;
+    result = x * 2;
+    return result;
+  }
+  catch "exceptionA" {
+    print("funcB caught exceptionA");
+    raise "exceptionB";
+  }
 }
 
 func main() {
+  var y;
+  y = funcB(funcA());
+  print("Main continues");
   try {
-    var result;
-    result = divide(10, 0);  /* evaluation deferred due to laziness */
-    print("Result: ", result); /* evaluation occurs here */
+    print(y);
   }
-  catch "div0" {
-    print("Caught division by zero!");
+  catch "exceptionB" {
+    print("Main caught exceptionB");
   }
+  print("End of main");
 }
 """
-
-# func f() {
-#     print("fuck");
-#     return 3;
-# }
-
-# func main() {
-#     var x;
-#     x = 1;
-#     var y; 
-#     y = 6;
-#     x = y + 1;
-#     y = 0;
-#     print(y);
-#     print(x);
-# }
-# /*
-# 0
-# 7
-# */
 
 a = Interpreter(); 
 a.run(test)
