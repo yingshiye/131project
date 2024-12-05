@@ -1,2 +1,1 @@
-# UCLA FALL CS 131 Project 
-ALL GOOD? NO MY LIFE IS TOO GOOD 
+im cooked 

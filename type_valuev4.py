@@ -15,7 +15,6 @@ class Value:
     def __init__(self, type, value=None):
         self.t = type
         self.v = value
-        self.isEvaluated = False
         self.scope = None
 
     def value(self):
@@ -29,7 +28,7 @@ class Value:
     
     def changeValue(self, value, type): 
         self.v = value
-        self.type = type
+        self.t = type
 
 
 def create_value(val):

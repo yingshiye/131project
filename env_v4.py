@@ -32,8 +32,11 @@ class EnvironmentManager:
         return True
 
     # used when we enter a new function - start with empty dictionary to hold parameters.
-    def push_func(self):
-        self.environment.append([{}])  # [[...]] -> [[...], [{}]]
+    def push_func(self, parameters=None):
+        if parameters is not None:
+            self.environment.append([parameters])
+        else: 
+            self.environment.append([{}])  # [[...]] -> [[...], [{}]]
 
     def push_block(self):
         cur_func_env = self.environment[-1]

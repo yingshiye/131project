@@ -150,37 +150,18 @@ class Interpreter(InterpreterBase):
 
     def __assign(self, assign_ast):
         var_name = assign_ast.get("name")
-        value_obj = self.__store_var(assign_ast.get("expression"))
+        value_obj = assign_ast.get("expression")
+        # value_obj = Value(Type.UNKNOWN)
+        # value_obj.v = self.__lazy_eval_expr(assign_ast.get("expression"))
+        # scope = []
+        # for item in self.env.environment[-1]: 
+        #     scope.append(item)
+        # value_obj.setScope(scope)
         if not self.env.set(var_name, value_obj):
             super().error(
                 ErrorType.NAME_ERROR, f"Undefined variable {var_name} in assignment"
             )
-    
-    def __store_var(self, value_ast):
-        if value_ast.elem_type in {
-                InterpreterBase.NIL_NODE, InterpreterBase.INT_NODE, 
-                InterpreterBase.STRING_NODE, InterpreterBase.BOOL_NODE,
-                InterpreterBase.FCALL_NODE
-                }:
-            return value_ast
-        
-        if value_ast.elem_type == InterpreterBase.VAR_NODE:
-            var_name = value_ast.get("name")
-            val = self.env.get(var_name)
-            if isinstance(val, Value):
-                return val
-            else:
-                return self.__store_var(val)
-        
-        if value_ast.elem_type in Interpreter.BIN_OPS:
-            return self.__eval_op(value_ast)
 
-        if value_ast.elem_type == Interpreter.NEG_NODE:
-            return self.__eval_unary(value_ast, Type.INT, lambda x: -1 * x) # must be int
-        
-        if value_ast.elem_type == Interpreter.NOT_NODE:
-            return self.__eval_unary(value_ast, Type.BOOL, lambda x: not x) # must be bool 
-    
     def __var_def(self, var_ast):
         var_name = var_ast.get("name")
         if not self.env.create(var_name, Interpreter.NIL_VALUE):
@@ -204,10 +185,15 @@ class Interpreter(InterpreterBase):
             val = self.env.get(var_name)
             if val is None:
                 super().error(ErrorType.NAME_ERROR, f"Variable {var_name} not found")
-
-            # var.v == unknown
-            #     get value scope, push scope into env, evalute, pop scope, result change value and copy current scope
-            # return val 
+            # if val.t == Type.UNKNOWN:
+            #     val_scope = val.scope
+            #     self.env.push_func(val_scope)
+            #     eval_val = self.__eval_expr(val)
+            #     self.env.pop_block()
+            #     val.changeValue(eval_val.value(), eval_val.type())
+            #     val.scope = self.env.environment[-1]
+            #     self.env.set(var_name, val)
+            #     return val
 
             return self.__eval_expr(val)
         
@@ -231,10 +217,35 @@ class Interpreter(InterpreterBase):
                 return self.__eval_expr(op2)
             
             return self.__eval_op(expr_ast)
+
         if expr_ast.elem_type == Interpreter.NEG_NODE:
             return self.__eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
         if expr_ast.elem_type == Interpreter.NOT_NODE:
             return self.__eval_unary(expr_ast, Type.BOOL, lambda x: not x)
+        
+    def __lazy_eval_expr(self, expr_ast):
+        if isinstance(expr_ast, Value):
+            return expr_ast
+        if expr_ast.elem_type == InterpreterBase.NIL_NODE:
+            return Interpreter.NIL_VALUE
+        if expr_ast.elem_type == InterpreterBase.INT_NODE:
+            return Value(Type.INT, expr_ast.get("val"))
+        if expr_ast.elem_type == InterpreterBase.STRING_NODE:
+            return Value(Type.STRING, expr_ast.get("val"))
+        if expr_ast.elem_type == InterpreterBase.BOOL_NODE:
+            return Value(Type.BOOL, expr_ast.get("val"))
+        if expr_ast.elem_type == InterpreterBase.VAR_NODE:
+            var_name = expr_ast.get("name")
+            val = self.env.get(var_name)
+            return self.__lazy_eval_expr(val)
+        if expr_ast.elem_type == InterpreterBase.FCALL_NODE:
+            return self.__lazy_call_func(expr_ast)
+        if expr_ast.elem_type in Interpreter.BIN_OPS:
+            return self.__lazy_eval_op(expr_ast)
+        if expr_ast.elem_type == Interpreter.NEG_NODE:
+            return self.__lazy_eval_unary(expr_ast, Type.INT, lambda x: -1 * x)
+        if expr_ast.elem_type == Interpreter.NOT_NODE:
+            return self.__lazy_eval_unary(expr_ast, Type.BOOL, lambda x: not x)
 
     def __eval_try(self, arith_est):
         try_statements = arith_est.get("statements")
@@ -243,7 +254,8 @@ class Interpreter(InterpreterBase):
         len_block = len(self.env.environment[-1])
 
         try:
-            self.__run_statements(try_statements)
+            status, return_val = self.__run_statements(try_statements)
+            return (status, return_val)
         except Exception as e:
             while len_func != len(self.env.environment):
                 self.env.pop_func()
@@ -253,24 +265,12 @@ class Interpreter(InterpreterBase):
             for catch in catchers: 
                 if catch.get("exception_type") == exception_type:
                     self.env.push_block()
-                    self.__run_statements(catch.get("statements"))
-                    self.env.pop_block()
-                    return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
-        # raise e 
-        return(ExecStatus.CONTINUE, Interpreter.NIL_NODE)
-    
-        # for statement in try_statements: 
-        #     if statement.elem_type == Interpreter.RAISE_NODE:
-        #         exception_node = statement.get("exception_type")
-        #         exception = self.__eval_expr(exception_node)
-        #         for catch in catchers: 
-        #             if catch.get("exception_type") == exception.value():
-        #                 self.__run_statements(catch.get("statements"))
-        #                 return (ExecStatus.RETURN, Interpreter.NIL_VALUE)
-                        
-        #     else: 
-        #         self.__run_statement(statement)
-        # return (ExecStatus.CONTINUE, Interpreter.NIL_VALUE)       
+                    try: 
+                        status, return_val = self.__run_statements(catch.get("statements"))
+                    finally: 
+                        self.env.pop_block()
+                    return (status, return_val)
+            raise e
 
 
     def __eval_op(self, arith_ast):
@@ -433,45 +433,10 @@ class Interpreter(InterpreterBase):
 
     def __do_raise(self, arith_est):
         exception_node = arith_est.get("exception_type")
-        exception_type = self.__eval_expr(exception_node) #has to be string
+        exception_type = self.__eval_expr(exception_node) #string
 
         if exception_type.t != Type.STRING:
             super().error(ErrorType.TYPE_ERROR, "exception type must be string")
 
         raise Exception(exception_type.value())
 
-test ="""
-func funcA() {
-  print("funcA is running");
-  raise "exceptionA";
-}
-
-func funcB(x) {
-  print("funcB is running");
-  try {
-    var result;
-    result = x * 2;
-    return result;
-  }
-  catch "exceptionA" {
-    print("funcB caught exceptionA");
-    raise "exceptionB";
-  }
-}
-
-func main() {
-  var y;
-  y = funcB(funcA());
-  print("Main continues");
-  try {
-    print(y);
-  }
-  catch "exceptionB" {
-    print("Main caught exceptionB");
-  }
-  print("End of main");
-}
-"""
-
-a = Interpreter(); 
-a.run(test)
